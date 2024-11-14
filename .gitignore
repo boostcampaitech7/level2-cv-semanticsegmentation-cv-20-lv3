@@ -1,0 +1,11 @@
+# Data 포함되지 않게 처리
+train
+test
+data.tar.gz
+
+# baseline 처리
+baseline_code.*
+
+# pycache 처리
+*.pyc
+__pycache__/
