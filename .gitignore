@@ -10,3 +10,10 @@ baseline_code.*
 # pycache 처리
 *.pyc
 __pycache__/
+
+# chechpoints / 가중치
+*.pt
+chechpoints/
+
+# wandb 처리
+wandb/

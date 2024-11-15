@@ -22,6 +22,8 @@ class XRayDataset(Dataset):
             indices = np.random.choice(len(_filenames), debug_sample_size, replace=False)
             self.filenames = _filenames[indices].tolist()
             self.labelnames = _labelnames[indices].tolist()
+            self.is_train = is_train
+            self.transforms = transforms
             print(f"Debug mode enabled: Using {debug_sample_size} samples")
         else:
             # split train-valid
