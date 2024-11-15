@@ -76,7 +76,7 @@ def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
     avg_dice = torch.mean(dices_per_class).item()
     return avg_dice
 
-def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name):
+def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, scheduler=None):
     
     print(f'Start training..')
     
@@ -107,7 +107,15 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                     f'Loss: {round(loss.item(),4)}'
                 )
                 wandb.log({'Train_loss' : loss})
-             
+
+        # 스케줄러 업데이트
+        if scheduler is not None:
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(dice)  # validation metric 기반
+            else:
+                scheduler.step()  # 일반적인 스케줄러 (e.g., StepLR, CosineAnnealingLR)
+            wandb.log({'Learning_rate': optimizer.param_groups[0]['lr']})
+
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (epoch + 1) % VAL_EVERY == 0:
             dice = validation(epoch + 1, model, CLASSES, val_loader, criterion)
@@ -117,7 +125,6 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                 print(f"Save model in {SAVED_DIR}")
                 best_dice = dice
                 save_model(model, SAVED_DIR, f'{model_name}.pt')
-    
 
 def encode_mask_to_rle(mask):
     '''

@@ -84,11 +84,15 @@ def main(config, CLASSES, CLASS2IND):
 
     # Optimizer를 정의합니다.
     optimizer = getattr(optim, config['optimizer'])(params=model.parameters(), lr=config['lr'], weight_decay=1e-6)
-
+    
+    # 스케줄러 정의 (예시: StepLR)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config['num_epochs'])
+    
     set_seed(config['random_seed'])
 
 
-    train(model, config['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['val_every'], SAVED_DIR, config['model']['name'])
+    train(model, config['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['val_every'], SAVED_DIR, config['model']['name'],
+          scheduler = scheduler)
 
 if __name__ == '__main__':
     main()
