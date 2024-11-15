@@ -1,4 +1,4 @@
-exp_name : basetest
+exp_name : no_amp_test2
 
 random_seed: 20
 
@@ -23,7 +23,7 @@ transform:
 
 train_batch: 4
 val_batch: 8
-num_epochs: 200
+num_epochs: 150
 val_every: 5
 lr: 0.0001
 
