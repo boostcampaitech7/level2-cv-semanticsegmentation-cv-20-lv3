@@ -1,3 +1,4 @@
+proj_name : baseline
 exp_name : basetest
 
 random_seed: 20
