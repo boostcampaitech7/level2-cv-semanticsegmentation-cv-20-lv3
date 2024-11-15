@@ -1,3 +1,6 @@
+### Config file format
+Config files are in `.yaml` format:
+```yaml
 proj_name : baseline
 exp_name : basetest
 
@@ -24,9 +27,28 @@ transform:
 
 train_batch: 4
 val_batch: 8
-num_epochs: 150
+num_epochs: 200
 val_every: 5
 lr: 0.0001
 
 criterion: BCEWithLogitsLoss
 optimizer: Adam
+
+```
+
+Add addional configurations if you need.
+
+### Training with config example
+Modify the configurations in `.yaml` config files, then run:
+
+  ```
+  python seg.py --mode train --config ./config/config.yaml
+  ```
+
+
+### Test with config example
+Modify the configurations in `.yaml` config files, then run:
+
+  ```
+  python seg.py --mode test --config ./config/config.yaml
+  ```
