@@ -15,7 +15,7 @@ def dice_coef(y_true, y_pred):
     eps = 0.0001
     return (2. * intersection + eps) / (torch.sum(y_true_f, -1) + torch.sum(y_pred_f, -1) + eps)
 
-def save_model(model, SAVED_DIR, file_name='fcn_resnet50_best_model_1.pt'):
+def save_model(model, SAVED_DIR, file_name='best_model.pt'):
     output_path = os.path.join(SAVED_DIR, file_name)
     torch.save(model, output_path)
 
@@ -59,9 +59,10 @@ def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
             masks = masks.detach().cpu()
             
             dice = dice_coef(outputs, masks)
+            wandb.log({'Each dice' : dice})
             dices.append(dice)
 
-    wandb.log({'validation_loss' : total_loss})
+    wandb.log({'Validation_loss' : total_loss})
 
     dices = torch.cat(dices, 0)
     dices_per_class = torch.mean(dices, 0)
@@ -83,7 +84,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
     
     for epoch in range(NUM_EPOCHS):
         model.train()
-
+        wandb.log({'Epoch' : epoch})
         for step, (images, masks) in enumerate(train_loader):            
             # gpu 연산을 위해 device 할당합니다.
             images, masks = images.cuda(), masks.cuda()
@@ -105,12 +106,12 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                     f'Step [{step+1}/{len(train_loader)}], '
                     f'Loss: {round(loss.item(),4)}'
                 )
-                wandb.log({'train_loss' : loss})
+                wandb.log({'Train_loss' : loss})
              
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (epoch + 1) % VAL_EVERY == 0:
             dice = validation(epoch + 1, model, CLASSES, val_loader, criterion)
-            wandb.log({'validation_dice' : dice})
+            wandb.log({'Average_dice' : dice})
             if best_dice < dice:
                 print(f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}")
                 print(f"Save model in {SAVED_DIR}")
