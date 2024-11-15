@@ -81,6 +81,10 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
     print(f'Start training..')
     
     best_dice = 0.
+
+    use_amp = True
+
+    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
     
     for epoch in range(NUM_EPOCHS):
         model.train()
@@ -90,10 +94,14 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
             
+            #with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = model(images)['out']
             
-            # loss를 계산합니다.
+                # loss를 계산합니다.
             loss = criterion(outputs, masks)
+            # scaler.scale(loss).backward()
+            # scaler.step(optimizer)
+            # scaler.update()
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
