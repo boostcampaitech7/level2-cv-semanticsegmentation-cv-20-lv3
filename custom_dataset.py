@@ -7,51 +7,47 @@ from sklearn.model_selection import GroupKFold
 from torch.utils.data import Dataset
 
 class XRayDataset(Dataset):
-    def __init__(self, pngs, jsons, img_root, label_root, classes, CLASS2IND, is_train=True, transforms=None):
+    def __init__(self, pngs, jsons, img_root, label_root, classes, CLASS2IND, is_train=True, transforms=None, debug=False):
         self.img_root = img_root
         self.label_root = label_root
         self.classes = classes
-
         self.CLASS2IND = CLASS2IND
 
         _filenames = np.array(pngs)
         _labelnames = np.array(jsons)
-        
-        # split train-valid
-        # 한 폴더 안에 한 인물의 양손에 대한 `.dcm` 파일이 존재하기 때문에
-        # 폴더 이름을 그룹으로 해서 GroupKFold를 수행합니다.
-        # 동일 인물의 손이 train, valid에 따로 들어가는 것을 방지합니다.
-        groups = [os.path.dirname(fname) for fname in _filenames]
-        
-        # dummy label
-        ys = [0 for fname in _filenames]
-        
-        # 전체 데이터의 20%를 validation data로 쓰기 위해 `n_splits`를
-        # 5으로 설정하여 KFold를 수행합니다.
-        gkf = GroupKFold(n_splits=5)
-        
-        filenames = []
-        labelnames = []
-        for i, (x, y) in enumerate(gkf.split(_filenames, ys, groups)):
-            if is_train:
-                # 0번을 validation dataset으로 사용합니다.
-                if i == 0:
-                    continue
-                    
-                filenames += list(_filenames[y])
-                labelnames += list(_labelnames[y])
+
+        # debug 모드일 때는 전체 데이터를 사용하지 않고 5%만 샘플링합니다.
+        if debug:
+            debug_sample_size = int(len(_filenames) * 0.05)
+            indices = np.random.choice(len(_filenames), debug_sample_size, replace=False)
+            self.filenames = _filenames[indices].tolist()
+            self.labelnames = _labelnames[indices].tolist()
+            print(f"Debug mode enabled: Using {debug_sample_size} samples")
+        else:
+            # split train-valid
+            groups = [os.path.dirname(fname) for fname in _filenames]
+            ys = [0 for fname in _filenames]
+            gkf = GroupKFold(n_splits=5)
             
-            else:
-                filenames = list(_filenames[y])
-                labelnames = list(_labelnames[y])
+            filenames = []
+            labelnames = []
+            for i, (x, y) in enumerate(gkf.split(_filenames, ys, groups)):
+                if is_train:
+                    if i == 0:
+                        continue  # 첫 번째 fold를 validation으로 사용
+                    
+                    filenames += list(_filenames[y])
+                    labelnames += list(_labelnames[y])
                 
-                # skip i > 0
-                break
-        
-        self.filenames = filenames
-        self.labelnames = labelnames
-        self.is_train = is_train
-        self.transforms = transforms
+                else:
+                    filenames = list(_filenames[y])
+                    labelnames = list(_labelnames[y])
+                    break  # skip i > 0
+            
+            self.filenames = filenames
+            self.labelnames = labelnames
+            self.is_train = is_train
+            self.transforms = transforms
     
     def __len__(self):
         return len(self.filenames)
