@@ -88,7 +88,7 @@ def main(config, CLASSES, CLASS2IND):
     set_seed(config['random_seed'])
 
 
-    train(model, config['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['val_every'], SAVED_DIR, config['model']['name'])
+    train(model, config['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['val_every'], SAVED_DIR, config['model']['name'], config['model']['type'])
 
 if __name__ == '__main__':
     main()
