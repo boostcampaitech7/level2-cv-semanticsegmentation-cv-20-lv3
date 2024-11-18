@@ -1,5 +1,5 @@
 proj_name : syp
-exp_name : unet_resnet50
+exp_name : unet_resnet50pp
 
 random_seed: 20
 

@@ -58,8 +58,7 @@ def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.
             cnt += 1
             
             outputs = torch.sigmoid(outputs)
-            outputs = (outputs > thr).detach().cpu()
-            masks = masks.detach().cpu()
+            outputs = (outputs > thr)
             
             dice = dice_coef(outputs, masks)
             wandb.log({'Each dice' : dice})
