@@ -5,9 +5,9 @@ random_seed: 20
 
 model:
   type: smp
-  arch: unet
+  arch: unetplusplus
   encoder_name: resnet50
-  name: unet_resnet50
+  name: unetpp_resnet50
   encoder_weights: imagenet
   in_channels: 3
 
@@ -26,7 +26,7 @@ transform:
         width: 512
 
 train_batch: 4
-val_batch: 8
+val_batch: 6
 num_epochs: 100
 val_every: 5
 lr: 0.0001
