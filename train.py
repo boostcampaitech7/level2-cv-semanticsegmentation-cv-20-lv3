@@ -53,7 +53,7 @@ def main(config, CLASSES, CLASS2IND):
     tf = TransformSelector(config['transform']['transform_type'], config['transform']["augmentations"]).get_transform()
 
     train_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tf, debug=config['debug'])
-    valid_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND,is_train=False, transforms=tf, debug=config['debug'])
+    valid_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tf, debug=config['debug'])
     
 
     train_loader = DataLoader(
@@ -86,9 +86,12 @@ def main(config, CLASSES, CLASS2IND):
     # Optimizer를 정의합니다.
     optimizer = getattr(optim, config['optimizer'])(params=model.parameters(), lr=config['lr'], weight_decay=1e-6)
     
-    # 스케줄러 정의 (예시: StepLR)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config['num_epochs'])
+    # Scheduler 설정
+    scheduler_name = config['lr_scheduler']['type']  # 'CosineAnnealingLR' 또는 다른 스케줄러 종류
+    scheduler_params = config['lr_scheduler']['params']  # 예: {'T_max': 10}
     
+    scheduler = getattr(optim.lr_scheduler, scheduler_name)(optimizer, **scheduler_params)
+
     set_seed(config['random_seed'])
 
 
