@@ -1,4 +1,4 @@
-exp_name : debug_test
+exp_name : wandb_test
 
 random_seed: 20
 debug: True

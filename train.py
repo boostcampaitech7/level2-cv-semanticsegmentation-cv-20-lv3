@@ -10,7 +10,7 @@ import wandb
 
 def main(config, CLASSES, CLASS2IND):
     
-    wandb.init(project='X-ray Semantic Segmentation')
+    wandb.init(project='ksg_test')
     wandb.run.name = config['exp_name']
     wandb.run.save()
     wandb_args = {
