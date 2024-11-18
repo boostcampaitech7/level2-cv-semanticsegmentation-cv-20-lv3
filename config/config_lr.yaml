@@ -1,39 +1,51 @@
-proj_name : baseline
-exp_name : basetest
+# Project Settings
+proj_name: "baseline"
+exp_name: "basetest"
 
+# General Settings
 random_seed: 20
-debug: True
+debug: false
 
+# Model Configuration
 model:
-  type: torchvision
-  name: fcn_resnet50
-  pretrained: True
+  type: "torchvision"
+  name: "fcn_resnet50"
+  pretrained: true
 
-optimizer: Adam
-criterion: BCEWithLogitsLoss
-lr: 0.0001
+# Optimizer & Scheduler Configuration
+optimizer:
+  type: "Adam"
+  lr: 0.0001
+
+criterion: "BCEWithLogitsLoss"
+
 lr_scheduler:
-  type: "CosineAnnealingLR"         # 스케줄러 종류 (예: CosineAnnealingLR)
-  params:                           # 스케줄러에 필요한 파라미터들
-    T_max: 1                       # CosineAnnealingLR에 필요한 파라미터
-    eta_min: 0.00001                      # 최소 학습률
+  type: "CosineAnnealingLR"        # Learning rate scheduler
+  params:
+    T_max: 1                       # Maximum number of iterations
+    eta_min: 0.00001               # Minimum learning rate
 
-train_img: '/data/ephemeral/home/data/train/DCM'
-train_label: '/data/ephemeral/home/data/train/outputs_json'
-test_img: /data/ephemeral/home/data/test/DCM
-pt_saved_dir: '/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints'
-pt_loaded_dir: '/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints/fcn_resnet50.pt'
+# Dataset Paths
+paths:
+  train_img: "/data/ephemeral/home/data/train/DCM"
+  train_label: "/data/ephemeral/home/data/train/outputs_json"
+  test_img: "/data/ephemeral/home/data/test/DCM"
+  pt_saved_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints"
+  pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints/fcn_resnet50.pt"
 
+# Data Augmentation
 transform:
-  transform_type: albumentations
+  type: "albumentations"
   augmentations:
-    - type: Resize
+    - type: "Resize"
       params:
         height: 256
         width: 256
 
-train_batch: 16
-val_batch: 4
-num_epochs: 2
-val_every: 1
-debug: false
+# Training Configuration
+training:
+  batch_size:
+    train: 16
+    val: 4
+  num_epochs: 2
+  validate_every: 1
