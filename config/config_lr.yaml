@@ -16,7 +16,7 @@ lr_scheduler:
   type: "CosineAnnealingLR"         # 스케줄러 종류 (예: CosineAnnealingLR)
   params:                           # 스케줄러에 필요한 파라미터들
     T_max: 1                       # CosineAnnealingLR에 필요한 파라미터
-    eta_min: 0.0001                      # 최소 학습률
+    eta_min: 0.00001                      # 최소 학습률
 
 train_img: '/data/ephemeral/home/data/train/DCM'
 train_label: '/data/ephemeral/home/data/train/outputs_json'
