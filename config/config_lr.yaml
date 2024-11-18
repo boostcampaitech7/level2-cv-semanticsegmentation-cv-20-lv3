@@ -1,6 +1,6 @@
 # Project Settings
 proj_name: "baseline"
-exp_name: "basetest"
+exp_name: "basetest" # 실험 결과 저장
 
 # General Settings
 random_seed: 20
@@ -19,19 +19,30 @@ optimizer:
 
 criterion: "BCEWithLogitsLoss"
 
+# lr_scheduler:
+#   type: 'ReduceLROnPlateau'  # 'CosineAnnealingLR', 'StepLR', 'ReduceLROnPlateau' 등
+#   params:
+#     factor: 0.1
+#     patience: 5
+#     mode: 'min'
+
 lr_scheduler:
-  type: "CosineAnnealingLR"        # Learning rate scheduler
-  params:
-    T_max: 1                       # Maximum number of iterations
-    eta_min: 0.00001               # Minimum learning rate
+  type: "CosineAnnealingLR"         # 스케줄러 종류 (예: CosineAnnealingLR)
+  params:                           # 스케줄러에 필요한 파라미터들
+    T_max: 10                       # CosineAnnealingLR에 필요한 파라미터
+    eta_min: 0.0001                      # 최소 학습률
+
 
 # Dataset Paths
 paths:
-  train_img: "/data/ephemeral/home/data/train/DCM"
-  train_label: "/data/ephemeral/home/data/train/outputs_json"
-  test_img: "/data/ephemeral/home/data/test/DCM"
-  pt_saved_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints"
-  pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints/fcn_resnet50.pt"
+  train:
+    image: "/data/ephemeral/home/data/train/DCM"
+    label: "/data/ephemeral/home/data/train/outputs_json"
+  test:
+    image: "/data/ephemeral/home/data/test/DCM"
+  model:
+    save_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result"
+    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/fcn_resnet50.pt"
 
 # Data Augmentation
 transform:
@@ -47,5 +58,5 @@ training:
   batch_size:
     train: 16
     val: 4
-  num_epochs: 2
+  num_epochs: 30
   validate_every: 1
