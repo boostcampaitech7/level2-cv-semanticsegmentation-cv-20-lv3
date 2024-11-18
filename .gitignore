@@ -11,9 +11,8 @@ baseline_code.*
 *.pyc
 __pycache__/
 
-# chechpoints / 가중치
+# 훈련하면서 생성되는 폴더 처리
 *.pt
-chechpoints/
-
-# wandb 처리
-wandb/
+wandb
+checkpoints
+nohup.out

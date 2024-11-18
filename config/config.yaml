@@ -1,4 +1,5 @@
-exp_name : wandb_test
+proj_name : baseline
+exp_name : basetest
 
 random_seed: 20
 debug: True

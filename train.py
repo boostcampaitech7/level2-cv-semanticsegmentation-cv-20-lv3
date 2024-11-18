@@ -10,7 +10,7 @@ import wandb
 
 def main(config, CLASSES, CLASS2IND):
     
-    wandb.init(project='ksg_test')
+    wandb.init(project=config['proj_name'])
     wandb.run.name = config['exp_name']
     wandb.run.save()
     wandb_args = {
@@ -89,7 +89,7 @@ def main(config, CLASSES, CLASS2IND):
     set_seed(config['random_seed'])
 
 
-    train(model, config['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['val_every'], SAVED_DIR, config['model']['name'])
+    train(model, config['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['val_every'], SAVED_DIR, config['model']['name'], config['model']['type'])
 
 if __name__ == '__main__':
     main()
