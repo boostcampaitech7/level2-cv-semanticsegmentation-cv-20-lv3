@@ -84,15 +84,20 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
     print(f'Start training..')
     
     best_dice = 0.
-    
+    model = model.cuda()
+
     for epoch in range(NUM_EPOCHS):
         model.train()
-        wandb.log({'Epoch' : epoch})
+        print(f"Epoch {epoch + 1}/{NUM_EPOCHS}")
+        
+        # 에포크 시작 시 로깅
+        wandb.log({'Epoch': epoch + 1})
+        
         for step, (images, masks) in enumerate(train_loader):            
             # gpu 연산을 위해 device 할당합니다.
             images, masks = images.cuda(), masks.cuda()
-            model = model.cuda()
             
+            # Forward pass
             if model_type == 'torchvision':
                 outputs = model(images)['out']
             elif model_type == 'smp':
@@ -104,6 +109,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
             loss.backward()
             optimizer.step()
             
+            
             # step 주기에 따라 loss를 출력합니다.
             if (step + 1) % 25 == 0:
                 print(
@@ -112,25 +118,27 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                     f'Step [{step+1}/{len(train_loader)}], '
                     f'Loss: {round(loss.item(),4)}'
                 )
-                wandb.log({'Train_loss' : loss})
-
-        # 스케줄러 업데이트
-        if scheduler is not None:
-            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                scheduler.step(dice)  # validation metric 기반
-            else:
-                scheduler.step()  # 일반적인 스케줄러 (e.g., StepLR, CosineAnnealingLR)
-            wandb.log({'Learning_rate': optimizer.param_groups[0]['lr']})
-
+                wandb.log({'Train_loss': loss.item()})
+        
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (epoch + 1) % VAL_EVERY == 0:
             dice = validation(epoch + 1, model, CLASSES, val_loader, criterion, model_type)
-            wandb.log({'Average_dice' : dice})
+            wandb.log({'Average_dice': dice})
+
             if best_dice < dice:
                 print(f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}")
                 print(f"Save model in {SAVED_DIR}")
                 best_dice = dice
                 save_model(model, SAVED_DIR, f'{model_name}.pt')
+
+        # 스케줄러 업데이트
+        if scheduler is not None:
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(best_dice)  # validation metric 기반 업데이트
+            else:
+                scheduler.step()
+            wandb.log({'Learning_rate': optimizer.param_groups[0]['lr']})
+
 
 def encode_mask_to_rle(mask):
     '''
