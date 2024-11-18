@@ -52,8 +52,9 @@ def main(config, CLASSES, CLASS2IND):
 
     tf = TransformSelector(config['transform']['transform_type'], config['transform']["augmentations"]).get_transform()
 
-    train_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tf)
-    valid_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND,is_train=False, transforms=tf)
+    train_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tf, debug=config['debug'])
+    valid_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND,is_train=False, transforms=tf, debug=config['debug'])
+    
 
     train_loader = DataLoader(
         dataset=train_dataset, 
@@ -91,7 +92,7 @@ def main(config, CLASSES, CLASS2IND):
     set_seed(config['random_seed'])
 
 
-    train(model, config['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['val_every'], SAVED_DIR, config['model']['name'],
+    train(model, config['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['val_every'], SAVED_DIR, config['model']['name'], config['model']['type'],
           scheduler = scheduler)
 
 if __name__ == '__main__':

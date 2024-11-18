@@ -31,7 +31,7 @@ def main(config, IND2CLASS):
         drop_last=False
     )
 
-    rles, filename_and_class = test(model, IND2CLASS, test_loader)
+    rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'])
 
     classes, filename = zip(*[x.split("_") for x in filename_and_class])
     image_name = [os.path.basename(f) for f in filename]

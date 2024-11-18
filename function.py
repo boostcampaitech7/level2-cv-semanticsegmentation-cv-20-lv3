@@ -28,7 +28,7 @@ def set_seed(RANDOM_SEED):
     np.random.seed(RANDOM_SEED)
     random.seed(RANDOM_SEED)
 
-def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
+def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.5):
     print(f'Start validation #{epoch:2d}')
     model.eval()
 
@@ -41,7 +41,10 @@ def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
             images, masks = images.cuda(), masks.cuda()         
             model = model.cuda()
             
-            outputs = model(images)['out']
+            if model_type == 'torchvision':
+                outputs = model(images)['out']
+            elif model_type == 'smp':
+                outputs = model(images)
             
             output_h, output_w = outputs.size(-2), outputs.size(-1)
             mask_h, mask_w = masks.size(-2), masks.size(-1)
@@ -55,8 +58,7 @@ def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
             cnt += 1
             
             outputs = torch.sigmoid(outputs)
-            outputs = (outputs > thr).detach().cpu()
-            masks = masks.detach().cpu()
+            outputs = (outputs > thr)
             
             dice = dice_coef(outputs, masks)
             wandb.log({'Each dice' : dice})
@@ -70,13 +72,14 @@ def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
         f"{c:<12}: {d.item():.4f}"
         for c, d in zip(CLASSES, dices_per_class)
     ]
+
     dice_str = "\n".join(dice_str)
     print(dice_str)
     
     avg_dice = torch.mean(dices_per_class).item()
     return avg_dice
 
-def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, scheduler=None):
+def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, model_type, scheduler=None):
     
     print(f'Start training..')
     
@@ -90,7 +93,10 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
             
-            outputs = model(images)['out']
+            if model_type == 'torchvision':
+                outputs = model(images)['out']
+            elif model_type == 'smp':
+                outputs = model(images)
             
             # loss를 계산합니다.
             loss = criterion(outputs, masks)
@@ -118,7 +124,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
 
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (epoch + 1) % VAL_EVERY == 0:
-            dice = validation(epoch + 1, model, CLASSES, val_loader, criterion)
+            dice = validation(epoch + 1, model, CLASSES, val_loader, criterion, model_type)
             wandb.log({'Average_dice' : dice})
             if best_dice < dice:
                 print(f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}")
@@ -153,7 +159,7 @@ def decode_rle_to_mask(rle, height, width):
     
     return img.reshape(height, width)
 
-def test(model, IND2CLASS, data_loader, thr=0.5):
+def test(model, IND2CLASS, data_loader, model_type, thr=0.5):
     model = model.cuda()
     model.eval()
 
@@ -163,7 +169,10 @@ def test(model, IND2CLASS, data_loader, thr=0.5):
 
         for step, (images, image_names) in tqdm(enumerate(data_loader), total=len(data_loader)):
             images = images.cuda()    
-            outputs = model(images)['out']
+            if model_type == 'torchvision':
+                outputs = model(images)['out']
+            elif model_type == 'smp':
+                outputs = model(images)
             
             outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
             outputs = torch.sigmoid(outputs)
