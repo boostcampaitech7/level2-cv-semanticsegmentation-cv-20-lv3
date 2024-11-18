@@ -21,8 +21,8 @@ lr_scheduler:
 train_img: '/data/ephemeral/home/data/train/DCM'
 train_label: '/data/ephemeral/home/data/train/outputs_json'
 test_img: /data/ephemeral/home/data/test/DCM
-pt_saved_dir: '/data/ephemeral/home/ksg/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints'
-pt_loaded_dir: '/data/ephemeral/home/ksg/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints/fcn_resnet50.pt'
+pt_saved_dir: '/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints'
+pt_loaded_dir: '/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints/fcn_resnet50.pt'
 
 transform:
   transform_type: albumentations
