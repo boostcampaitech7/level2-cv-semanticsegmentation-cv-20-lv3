@@ -10,3 +10,8 @@ baseline_code.*
 # pycache 처리
 *.pyc
 __pycache__/
+
+# 훈련하면서 생성되는 폴더 처리
+wandb
+checkpoints
+nohup.out
