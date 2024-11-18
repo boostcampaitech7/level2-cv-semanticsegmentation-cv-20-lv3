@@ -72,8 +72,7 @@ def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.
         f"{c:<12}: {d.item():.4f}"
         for c, d in zip(CLASSES, dices_per_class)
     ]
-    for c, d in zip(CLASSES, dices_per_class):
-        wandb.log({f'{c}_dice': d})
+
     dice_str = "\n".join(dice_str)
     print(dice_str)
     
