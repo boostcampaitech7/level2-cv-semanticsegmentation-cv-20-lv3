@@ -73,6 +73,15 @@ def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.
         for c, d in zip(CLASSES, dices_per_class)
     ]
 
+    # 예측 어려운 class 만 wandb로 결과 전송
+    target_classes = {"finger-16", "Trapezium", "Trapezoid", "Pisiform", "Lunate"}
+
+    filtered_dice = {
+                    f"valid/{entry.split(':')[0].strip()}": float(entry.split(':')[1].strip())  
+                    for entry in dice_str if entry.split(":")[0].strip() in target_classes
+                    }
+    wandb.log(filtered_dice)
+
     dice_str = "\n".join(dice_str)
     print(dice_str)
     
