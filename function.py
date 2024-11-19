@@ -82,9 +82,9 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
     
     best_dice = 0.
 
-    use_amp = True
+    # use_amp = True
 
-    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+    scaler = torch.cuda.amp.GradScaler()
     
     for epoch in range(NUM_EPOCHS):
         model.train()
@@ -93,18 +93,22 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
             # gpu 연산을 위해 device 할당합니다.
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
+            optimizer.zero_grad()
             
-            #with torch.cuda.amp.autocast(enabled=use_amp):
-            outputs = model(images)['out']
+            # with torch.cuda.amp.autocast(enabled=use_amp):
+            # with torch.cuda.amp.autocast_mode():
+            # with torch.autocast(device_type="cuda"):
+            with torch.cuda.amp.autocast():
+                outputs = model(images)['out']
             
                 # loss를 계산합니다.
-            loss = criterion(outputs, masks)
-            # scaler.scale(loss).backward()
-            # scaler.step(optimizer)
-            # scaler.update()
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                loss = criterion(outputs, masks)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+            # optimizer.zero_grad()
+            # loss.backward()
+            # optimizer.step()
             
             # step 주기에 따라 loss를 출력합니다.
             if (step + 1) % 25 == 0:

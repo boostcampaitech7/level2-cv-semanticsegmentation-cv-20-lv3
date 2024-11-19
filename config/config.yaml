@@ -1,5 +1,5 @@
-proj_name : baseline
-exp_name : basetest
+proj_name : sungjoo_amp
+exp_name : using_amp_2
 
 random_seed: 20
 
