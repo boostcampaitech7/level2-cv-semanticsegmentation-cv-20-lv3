@@ -26,11 +26,11 @@ criterion: "BCEWithLogitsLoss"
 #     patience: 5
 #     mode: 'min'
 
-lr_scheduler:
-  type: "CosineAnnealingLR"         # 스케줄러 종류 (예: CosineAnnealingLR)
-  params:                           # 스케줄러에 필요한 파라미터들
-    T_max: 10                       # CosineAnnealingLR에 필요한 파라미터
-    eta_min: 0.0001                      # 최소 학습률
+# lr_scheduler:
+#   type: "CosineAnnealingLR"         # 스케줄러 종류 (예: CosineAnnealingLR)
+#   params:                           # 스케줄러에 필요한 파라미터들
+#     T_max: 10                       # CosineAnnealingLR에 필요한 파라미터
+#     eta_min: 0.0001                      # 최소 학습률
 
 
 # Dataset Paths
