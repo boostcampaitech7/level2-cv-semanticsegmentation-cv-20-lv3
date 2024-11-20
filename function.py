@@ -95,7 +95,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
     best_dice = 0.
 
     scaler = torch.cuda.amp.GradScaler()
-    
+  
     for epoch in range(NUM_EPOCHS):
         model.train()
         print(f"Epoch {epoch + 1}/{NUM_EPOCHS}")
@@ -112,12 +112,14 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                 outputs = model(images)['out']
             elif model_type == 'smp':
                 outputs = model(images)
-            
-                # loss를 계산합니다.
-                loss = criterion(outputs, masks)
+
+            loss = criterion(outputs, masks)
             optimizer.zero_grad()
-            loss.backward()
             optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
             
             # step 주기에 따라 loss를 출력합니다.
             if (step + 1) % 25 == 0:
