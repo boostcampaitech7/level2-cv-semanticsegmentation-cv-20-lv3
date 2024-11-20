@@ -12,6 +12,7 @@ model:
   name: "fcn_resnet50"
   pretrained: true
 
+
 # Optimizer & Scheduler Configuration
 optimizer:
   type: "Adam"
@@ -32,6 +33,12 @@ criterion: "BCEWithLogitsLoss"
 #     T_max: 10                       # CosineAnnealingLR에 필요한 파라미터
 #     eta_min: 0.0001                      # 최소 학습률
 
+# Pseudo-Labeling Configuration
+pseudo_labeling:
+  enabled: true               # Pseudo-labeling 사용 여부
+  confidence_threshold: 0.9   # Pseudo-labeling에 사용할 최소 신뢰도
+  max_pseudo_samples: 1000    # 사용할 최대 pseudo-label 샘플 수
+  pseudo_dir: "/path/to/pseudo_labels"  # Pseudo-label 파일 저장 경로
 
 # Dataset Paths
 paths:
