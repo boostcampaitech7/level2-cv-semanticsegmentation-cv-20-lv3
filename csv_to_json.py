@@ -82,11 +82,9 @@ def csv_to_json_with_classes(result_file_name, output_dir, height=2048, width=20
         print(f"오류가 발생했습니다: {e}")
         raise e
 
-
-# 사용 예시
 csv_to_json_with_classes(
-    result_file_name='/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/output/256.csv',
-    output_dir='/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/jsons/',
+    result_file_name='/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/output/unetpp_resnet50_tta.csv',
+    output_dir='/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/test/outputs_json/',
     height=2048,
     width=2048
 )
