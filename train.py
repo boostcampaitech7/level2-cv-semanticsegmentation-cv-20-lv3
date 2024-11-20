@@ -8,6 +8,32 @@ from custom_augments import TransformSelector
 from selectModel import modelSelector
 import wandb
 
+def load_data(IMAGE_ROOT, LABEL_ROOT):
+    pngs = {
+        os.path.relpath(os.path.join(root, fname), start=IMAGE_ROOT)
+        for root, _dirs, files in os.walk(IMAGE_ROOT)
+        for fname in files
+        if os.path.splitext(fname)[1].lower() == ".png"
+    }
+
+    jsons = {
+        os.path.relpath(os.path.join(root, fname), start=LABEL_ROOT)
+        for root, _dirs, files in os.walk(LABEL_ROOT)
+        for fname in files
+        if os.path.splitext(fname)[1].lower() == ".json"
+    }
+
+    jsons_fn_prefix = {os.path.splitext(fname)[0] for fname in jsons}
+    pngs_fn_prefix = {os.path.splitext(fname)[0] for fname in pngs}
+
+    assert len(jsons_fn_prefix - pngs_fn_prefix) == 0
+    assert len(pngs_fn_prefix - jsons_fn_prefix) == 0
+
+    pngs = sorted(pngs)
+    jsons = sorted(jsons)
+
+    return pngs, jsons
+
 def main(config, CLASSES, CLASS2IND):
     
     wandb.init(project=config['proj_name'])
@@ -27,38 +53,20 @@ def main(config, CLASSES, CLASS2IND):
     if not os.path.exists(SAVED_DIR):                                                           
         os.makedirs(SAVED_DIR)
 
-    pngs = {
-        os.path.relpath(os.path.join(root, fname), start=IMAGE_ROOT)
-        for root, _dirs, files in os.walk(IMAGE_ROOT)
-        for fname in files
-        if os.path.splitext(fname)[1].lower() == ".png"
-    }
-
-    jsons = {
-        os.path.relpath(os.path.join(root, fname), start=LABEL_ROOT)
-        for root, _dirs, files in os.walk(LABEL_ROOT)
-        for fname in files
-        if os.path.splitext(fname)[1].lower() == ".json"
-    }
-
+    pngs, jsons = load_data(IMAGE_ROOT, LABEL_ROOT)
+    
     if config['pseudo_labeling']['enabled']:
-        print(config['pseudo_labeling']['enabled'])
-
-    jsons_fn_prefix = {os.path.splitext(fname)[0] for fname in jsons}
-    pngs_fn_prefix = {os.path.splitext(fname)[0] for fname in pngs}
-
-    assert len(jsons_fn_prefix - pngs_fn_prefix) == 0
-    assert len(pngs_fn_prefix - jsons_fn_prefix) == 0
-
-    pngs = sorted(pngs)
-    jsons = sorted(jsons)
+        TEST_IMAGE_ROOT = config['paths']['test']['image']
+        TEST_LABEL_ROOT = config['pseudo_labeling']['pseudo_dir']
+        test_pngs, test_jsons = load_data(TEST_IMAGE_ROOT, TEST_LABEL_ROOT)
+        pngs.update(test_pngs)
+        jsons.update(test_jsons)
 
     tf = TransformSelector(config['transform']['type'], config['transform']["augmentations"]).get_transform()
 
     train_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tf, debug=config['debug'])
     valid_dataset = XRayDataset(pngs, jsons, IMAGE_ROOT, LABEL_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tf, debug=config['debug'])
     
-
     train_loader = DataLoader(
         dataset=train_dataset, 
         batch_size=config['training']['batch_size']['train'],
