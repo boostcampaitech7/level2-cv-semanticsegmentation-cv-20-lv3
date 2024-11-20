@@ -31,20 +31,38 @@ def main(config, IND2CLASS):
         drop_last=False
     )
 
-    rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'])
+    if config['TTA']['used']:
+            tta_transform = TestTimeTransform(config['TTA']['augmentations']).getTransform()
+            rles, filename_and_class = tta_func(model, tta_transform, IND2CLASS, test_loader, config['model']['type'])
 
-    classes, filename = zip(*[x.split("_") for x in filename_and_class])
-    image_name = [os.path.basename(f) for f in filename]
-    df = pd.DataFrame({
-        "image_name": image_name,
-        "class": classes,
-        "rle": rles,
-    })
+            classes, filename = zip(*[x.split("_") for x in filename_and_class])
+            image_name = [os.path.basename(f) for f in filename]
+            df = pd.DataFrame({
+                "image_name": image_name,
+                "class": classes,
+                "rle": rles,
+            })
 
-    output = os.path.join(SAVED_DIR, "output")
-    if not os.path.exists(output):
-        os.makedirs(output)
-    df.to_csv(os.path.join(output, f"{config['exp_name']}.csv"), index=False)
+            output = os.path.join(SAVED_DIR, "output")
+            if not os.path.exists(output):
+                os.makedirs(output)
+            df.to_csv(os.path.join(output, f"{config['exp_name']}_tta.csv"), index=False)
+    
+    else:
+        rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'])
+
+        classes, filename = zip(*[x.split("_") for x in filename_and_class])
+        image_name = [os.path.basename(f) for f in filename]
+        df = pd.DataFrame({
+            "image_name": image_name,
+            "class": classes,
+            "rle": rles,
+        })
+
+        output = os.path.join(SAVED_DIR, "output")
+        if not os.path.exists(output):
+            os.makedirs(output)
+        df.to_csv(os.path.join(output, f"{config['exp_name']}.csv"), index=False)
 
 if __name__ == '__main__':
     main()
