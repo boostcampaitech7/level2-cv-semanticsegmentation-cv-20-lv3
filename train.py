@@ -41,6 +41,9 @@ def main(config, CLASSES, CLASS2IND):
         if os.path.splitext(fname)[1].lower() == ".json"
     }
 
+    if config['pseudo_labeling']['enabled']:
+        print(config['pseudo_labeling']['enabled'])
+
     jsons_fn_prefix = {os.path.splitext(fname)[0] for fname in jsons}
     pngs_fn_prefix = {os.path.splitext(fname)[0] for fname in pngs}
 

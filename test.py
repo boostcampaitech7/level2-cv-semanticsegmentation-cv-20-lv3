@@ -41,6 +41,7 @@ def main(config, IND2CLASS, thr=0.5):
         "rle": rles,
     })
 
+
     output = os.path.join(SAVED_DIR, "output")
     if not os.path.exists(output):
         os.makedirs(output)
