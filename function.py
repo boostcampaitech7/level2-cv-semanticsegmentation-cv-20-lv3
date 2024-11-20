@@ -165,6 +165,7 @@ def encode_mask_to_rle(mask):
 # RLE로 인코딩된 결과를 mask map으로 복원합니다.
 
 def decode_rle_to_mask(rle, height, width):
+
     s = rle.split()
     starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
     starts -= 1
