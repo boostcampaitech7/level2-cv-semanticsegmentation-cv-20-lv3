@@ -42,13 +42,13 @@ paths:
     image: "/data/ephemeral/home/data/test/DCM"
   model:
     save_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result"
-    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/fcn_resnet50.pt"
+    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/basetest/fcn_resnet50.pt"
 
 # Data Augmentation
 transform:
-  type: "albumentations"
+  type: albumentations
   augmentations:
-    - type: "Resize"
+    - type: Resize
       params:
         height: 256
         width: 256
@@ -56,7 +56,7 @@ transform:
 # Training Configuration
 training:
   batch_size:
-    train: 16
-    val: 4
+    train: 1
+    val: 1
   num_epochs: 30
   validate_every: 1
