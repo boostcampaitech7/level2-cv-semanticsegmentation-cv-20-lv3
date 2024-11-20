@@ -8,10 +8,10 @@ from function import test
 from custom_augments import TransformSelector
 
 def main(config, IND2CLASS):
-    IMAGE_ROOT = config['test_img']
-    SAVED_DIR = config['pt_saved_dir']
+    IMAGE_ROOT = config['paths']['test']['image']
+    SAVED_DIR = config['paths']['model']['save_dir']
 
-    model = torch.load(config['pt_loaded_dir'])
+    model = torch.load(config['paths']['model']['pt_loaded_dir'])
 
     pngs = {
         os.path.relpath(os.path.join(root, fname), start=IMAGE_ROOT)
@@ -20,7 +20,7 @@ def main(config, IND2CLASS):
         if os.path.splitext(fname)[1].lower() == ".png"
     }
 
-    tf = TransformSelector(config['transform']['transform_type'], config['transform']["augmentations"]).get_transform()
+    tf = TransformSelector(config['transform']['type'], config['transform']["augmentations"]).get_transform()
     test_dataset = XRayInferenceDataset(pngs, IMAGE_ROOT, transforms=tf)
 
     test_loader = DataLoader(
