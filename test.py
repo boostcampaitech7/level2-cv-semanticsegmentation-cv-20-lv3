@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from function import test
 from custom_augments import TransformSelector
 
-def main(config, IND2CLASS):
+def main(config, IND2CLASS, thr=0.5):
     IMAGE_ROOT = config['paths']['test']['image']
     SAVED_DIR = config['paths']['model']['save_dir']
 
@@ -31,7 +31,7 @@ def main(config, IND2CLASS):
         drop_last=False
     )
 
-    rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'])
+    rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'], thr=thr)
 
     classes, filename = zip(*[x.split("_") for x in filename_and_class])
     image_name = [os.path.basename(f) for f in filename]
