@@ -60,12 +60,3 @@ training:
     val: 1
   num_epochs: 30
   validate_every: 1
-
-TTA:
-  used: false
-  augmentations:
-    - type: HorizontalFlip
-      params:
-    - type: Multiply
-      params:
-        factors: [0.9, 1, 1.1, 1.2]
