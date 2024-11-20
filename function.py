@@ -11,6 +11,8 @@ from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 import wandb
+import ttach as tta
+import torch.nn as nn
 
 
 def dice_coef(y_true, y_pred):
@@ -101,7 +103,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
     best_dice = 0.
 
     scaler = torch.cuda.amp.GradScaler()
-    
+  
     for epoch in range(NUM_EPOCHS):
         model.train()
         print(f"Epoch {epoch + 1}/{NUM_EPOCHS}")
@@ -114,16 +116,19 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
             
-            if model_type == 'torchvision':
-                outputs = model(images)['out']
-            elif model_type == 'smp':
-                outputs = model(images)
-            
-                # loss를 계산합니다.
+            with torch.cuda.amp.autocast():
+                if model_type == 'torchvision':
+                    outputs = model(images)['out']
+                elif model_type == 'smp':
+                    outputs = model(images)
+
                 loss = criterion(outputs, masks)
             optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
             
             # step 주기에 따라 loss를 출력합니다.
             if (step + 1) % 25 == 0:
@@ -209,6 +214,45 @@ def test(model, IND2CLASS, data_loader, model_type, thr=0.5):
                     filename_and_class.append(f"{IND2CLASS[c]}_{image_name}")
                     
     return rles, filename_and_class
+
+def tta_func(model, tta_transforms, IND2CLASS, data_loader, model_type, thr=0.5):
+
+    if model_type == 'torchvision':
+        class CustomSegmentationModel(nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+
+            def forward(self, x):
+                outputs = self.model(x)
+                return outputs['out']
+
+        model = CustomSegmentationModel(model)
+    
+    model = model.cuda()
+    model.eval()
+
+    rles = []
+    filename_and_class = []
+    with torch.no_grad():
+
+        for step, (images, image_names) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            images = images.cuda()
+
+            tta_model = tta.SegmentationTTAWrapper(model, tta_transforms)
+            outputs = tta_model(images)
+            outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
+            outputs = torch.sigmoid(outputs)
+            outputs = (outputs > thr).detach().cpu().numpy()
+            
+            for output, image_name in zip(outputs, image_names):
+                for c, segm in enumerate(output):
+                    rle = encode_mask_to_rle(segm)
+                    rles.append(rle)
+                    filename_and_class.append(f"{IND2CLASS[c]}_{image_name}")
+                    
+    return rles, filename_and_class
+
 
 
 

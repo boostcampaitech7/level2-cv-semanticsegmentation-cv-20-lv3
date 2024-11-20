@@ -85,10 +85,11 @@ def main(config, CLASSES, CLASS2IND):
     optimizer = getattr(optim, config['optimizer']['type'])(params=model.parameters(), lr=config['optimizer']['lr'], weight_decay=1e-6)
     
     # Scheduler 설정
-    scheduler_name = config['lr_scheduler']['type']  # 'CosineAnnealingLR' 또는 다른 스케줄러 종류
-    scheduler_params = config['lr_scheduler']['params']  # 예: {'T_max': 10}
-    
-    scheduler = getattr(optim.lr_scheduler, scheduler_name)(optimizer, **scheduler_params)
+    scheduler = None
+    if 'lr_scheduler' in config:
+        scheduler_name = config['lr_scheduler']['type']  # 'CosineAnnealingLR' 또는 다른 스케줄러 종류
+        scheduler_params = config['lr_scheduler']['params']  # 예: {'T_max': 10}
+        scheduler = getattr(optim.lr_scheduler, scheduler_name)(optimizer, **scheduler_params)
 
     set_seed(config['random_seed'])
 
