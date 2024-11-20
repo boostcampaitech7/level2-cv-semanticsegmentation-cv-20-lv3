@@ -7,9 +7,8 @@ from sklearn.model_selection import GroupKFold
 from torch.utils.data import Dataset
 
 class XRayDataset(Dataset):
-    def __init__(self, pngs, jsons, img_root, label_root, classes, CLASS2IND, is_train=True, transforms=None, debug=False):
-        self.img_root = img_root
-        self.label_root = label_root
+    def __init__(self, pngs, jsons, data_root, classes, CLASS2IND, is_train=True, transforms=None, debug=False):
+        self.data_root = data_root
         self.classes = classes
         self.CLASS2IND = CLASS2IND
 
@@ -25,6 +24,7 @@ class XRayDataset(Dataset):
             self.is_train = is_train
             self.transforms = transforms
             print(f"Debug mode enabled: Using {debug_sample_size} samples")
+
         else:
             # split train-valid
             groups = [os.path.dirname(fname) for fname in _filenames]
@@ -55,14 +55,37 @@ class XRayDataset(Dataset):
         return len(self.filenames)
     
     def __getitem__(self, item):
+        # try:
+        # train / test img_root 가 각각 다름
+        # 그래서 image_name에 train/test를 붙이기로 함
+        # 그리고 그 앞에 data까지의 경로만 출력
+        '''
+        그럼 train에서
+        image_name = train/DCM/IDXXX/image166XXX~.png
+        label = train/outputs_json/IDXXX/image166XXX~.json
+
+        test에서
+        image_name = test/DCM/IDXXX/image166XXX~.png
+        label = test/outputs_json/image166XXX~.json
+
+        이 될 것이다.
+
+        앞의 self.img_root / self.label_root는 전부
+        self.data_root = level2-~/data/
+        로 잡아주면 될 것이다.
+
+        변경 부분 : XRayDataset(Dataset) 의 __init__(self)
+        relpath의 start 부분 (data부터 시작하게 만들어야 함)
+        '''
+
         image_name = self.filenames[item]
-        image_path = os.path.join(self.img_root, image_name)
+        image_path = os.path.join(self.data_root, image_name)
         
         image = cv2.imread(image_path)
         image = image / 255.
         
         label_name = self.labelnames[item]
-        label_path = os.path.join(self.label_root, label_name)
+        label_path = os.path.join(self.data_root, label_name)
         
         # (H, W, NC) 모양의 label을 생성합니다.
         label_shape = tuple(image.shape[:2]) + (len(self.classes), )
@@ -78,7 +101,7 @@ class XRayDataset(Dataset):
             c = ann["label"]
             class_ind = self.CLASS2IND[c]
             points = np.array(ann["points"])
-            
+
             # polygon 포맷을 dense한 mask 포맷으로 바꿉니다.
             class_label = np.zeros(image.shape[:2], dtype=np.uint8)
             cv2.fillPoly(class_label, [points], 1)
@@ -97,7 +120,12 @@ class XRayDataset(Dataset):
         
         image = torch.from_numpy(image).float()
         label = torch.from_numpy(label).float()
+
+        
             
+        # except:
+        #     print(image_name, label_name)
+        #     print(points.shape, type(points))            
         return image, label
 
 
