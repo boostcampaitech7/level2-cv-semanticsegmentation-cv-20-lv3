@@ -28,7 +28,7 @@ def set_seed(RANDOM_SEED):
     np.random.seed(RANDOM_SEED)
     random.seed(RANDOM_SEED)
 
-def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
+def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.5):
     print(f'Start validation #{epoch:2d}')
     model.eval()
 
@@ -41,7 +41,10 @@ def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
             images, masks = images.cuda(), masks.cuda()         
             model = model.cuda()
             
-            outputs = model(images)['out']
+            if model_type == 'torchvision':
+                outputs = model(images)['out']
+            elif model_type == 'smp':
+                outputs = model(images)
             
             output_h, output_w = outputs.size(-2), outputs.size(-1)
             mask_h, mask_w = masks.size(-2), masks.size(-1)
@@ -55,8 +58,7 @@ def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
             cnt += 1
             
             outputs = torch.sigmoid(outputs)
-            outputs = (outputs > thr).detach().cpu()
-            masks = masks.detach().cpu()
+            outputs = (outputs > thr)
             
             dice = dice_coef(outputs, masks)
             wandb.log({'Each dice' : dice})
@@ -70,19 +72,27 @@ def validation(epoch, model, CLASSES, data_loader, criterion, thr=0.5):
         f"{c:<12}: {d.item():.4f}"
         for c, d in zip(CLASSES, dices_per_class)
     ]
+
+    # 예측 어려운 class 만 wandb로 결과 전송
+    target_classes = {"finger-16", "Trapezium", "Trapezoid", "Pisiform", "Lunate"}
+
+    filtered_dice = {
+                    f"valid/{entry.split(':')[0].strip()}": float(entry.split(':')[1].strip())  
+                    for entry in dice_str if entry.split(":")[0].strip() in target_classes
+                    }
+    wandb.log(filtered_dice)
+    
     dice_str = "\n".join(dice_str)
     print(dice_str)
     
     avg_dice = torch.mean(dices_per_class).item()
     return avg_dice
 
-def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name):
+def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, model_type):
     
     print(f'Start training..')
     
     best_dice = 0.
-
-    # use_amp = True
 
     scaler = torch.cuda.amp.GradScaler()
     
@@ -93,22 +103,18 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
             # gpu 연산을 위해 device 할당합니다.
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
-            optimizer.zero_grad()
-            
-            # with torch.cuda.amp.autocast(enabled=use_amp):
-            # with torch.cuda.amp.autocast_mode():
-            # with torch.autocast(device_type="cuda"):
             with torch.cuda.amp.autocast():
-                outputs = model(images)['out']
+                if model_type == 'torchvision':
+                    outputs = model(images)['out']
+                elif model_type == 'smp':
+                    outputs = model(images)
             
                 # loss를 계산합니다.
                 loss = criterion(outputs, masks)
+            optimizer.zero_grad()
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-            # optimizer.zero_grad()
-            # loss.backward()
-            # optimizer.step()
             
             # step 주기에 따라 loss를 출력합니다.
             if (step + 1) % 25 == 0:
@@ -122,7 +128,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
              
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (epoch + 1) % VAL_EVERY == 0:
-            dice = validation(epoch + 1, model, CLASSES, val_loader, criterion)
+            dice = validation(epoch + 1, model, CLASSES, val_loader, criterion, model_type)
             wandb.log({'Average_dice' : dice})
             if best_dice < dice:
                 print(f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}")
@@ -158,7 +164,7 @@ def decode_rle_to_mask(rle, height, width):
     
     return img.reshape(height, width)
 
-def test(model, IND2CLASS, data_loader, thr=0.5):
+def test(model, IND2CLASS, data_loader, model_type, thr=0.5):
     model = model.cuda()
     model.eval()
 
@@ -168,7 +174,10 @@ def test(model, IND2CLASS, data_loader, thr=0.5):
 
         for step, (images, image_names) in tqdm(enumerate(data_loader), total=len(data_loader)):
             images = images.cuda()    
-            outputs = model(images)['out']
+            if model_type == 'torchvision':
+                outputs = model(images)['out']
+            elif model_type == 'smp':
+                outputs = model(images)
             
             outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
             outputs = torch.sigmoid(outputs)

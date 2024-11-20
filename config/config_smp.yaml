@@ -1,0 +1,36 @@
+proj_name : syp
+exp_name : unet_resnet50pp
+
+random_seed: 20
+debug: True
+
+model:
+  type: smp
+  arch: unetplusplus
+  encoder_name: resnet50
+  name: unetpp_resnet50
+  encoder_weights: imagenet
+  in_channels: 3
+
+train_img: '/data/ephemeral/home/data/train/DCM'
+train_label: '/data/ephemeral/home/data/train/outputs_json'
+test_img: /data/ephemeral/home/data/test/DCM
+pt_saved_dir: '/data/ephemeral/home/syp'
+pt_loaded_dir: '/data/ephemeral/home/syp/unet_resnet50/unetpp_resnet50.pt'
+
+transform:
+  transform_type: albumentations
+  augmentations:
+    - type: Resize
+      params:
+        height: 512
+        width: 512
+
+train_batch: 4
+val_batch: 6
+num_epochs: 100
+val_every: 5
+lr: 0.0001
+
+criterion: BCEWithLogitsLoss
+optimizer: Adam
