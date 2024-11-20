@@ -283,8 +283,6 @@ def csv_to_json(config, height=2048, width=2048):
     
     Args:
         config (dict): config.yaml을 읽은 dict
-        result_file_name (str): CSV 파일 경로.
-        output_dir (str): JSON 파일 저장 경로.
         height (int, optional): 이미지 높이. 기본값은 2048.
         width (int, optional): 이미지 너비. 기본값은 2048.
     """
@@ -295,8 +293,17 @@ def csv_to_json(config, height=2048, width=2048):
         if not os.path.exists(result_file_dir):
             os.makedirs(result_file_dir)
         result_file_name = os.path.join(result_file_dir, f"{config['exp_name']}.csv")
+        
         output_dir = os.path.join(os.path.dirname(config['paths']['test']['image']), os.path.basename(config['paths']['train']['label']))
-
+        
+        # # 우리의 파일은 outputs_json/IDxxx/이미지_이름.json의 형식으로 되어있는데
+        # # 그냥 outputs_json/이미지_이름.json으로 하게 되면
+        # # 코드를 두 번 짜야된다. 따라서 그에 맞춰서 directory를 하나 추가한다.
+        # output_dir = os.path.join(output_dir, "jsons")
+        
+        # if not os.path.exists(output_dir):
+        #     os.makedirs(output_dir)
+        
         # CSV 파일 읽기
         db = pd.read_csv(result_file_name)
         print(f"CSV 파일이 성공적으로 로드되었습니다: {result_file_name}")
