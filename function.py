@@ -112,11 +112,9 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                 outputs = model(images)['out']
             elif model_type == 'smp':
                 outputs = model(images)
-            
-                # loss를 계산합니다.
-                loss = criterion(outputs, masks)
+
+            loss = criterion(outputs, masks)
             optimizer.zero_grad()
-            loss.backward()
             optimizer.step()
             scaler.scale(loss).backward()
             scaler.step(optimizer)
