@@ -4,7 +4,7 @@ exp_name: "basetest_1024_1024_30 epoch" # 실험 결과 저장
 
 # General Settings
 random_seed: 20
-debug: false
+debug: true
 
 # Model Configuration
 model:
@@ -37,7 +37,7 @@ criterion: "BCEWithLogitsLoss"
 pseudo_labeling:
   enabled: false               # Pseudo-labeling 사용 여부
   confidence_threshold: 0.9   # Pseudo-labeling에 사용할 최소 신뢰도
-  max_pseudo_samples: 1000    # 사용할 최대 pseudo-label 샘플 수
+  # max_pseudo_samples: 1000    # 사용할 최대 pseudo-label 샘플 수 (현재 구현 못함)
   pseudo_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/outputs_json"  # Pseudo-label 파일 저장 경로
 
 # Dataset Paths
@@ -64,7 +64,7 @@ transform:
 # Training Configuration
 training:
   batch_size:
-    train: 4
-    val: 8
+    train: 1
+    val: 1
   num_epochs: 30
   validate_every: 1
