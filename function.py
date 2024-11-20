@@ -108,16 +108,16 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
             
-            if model_type == 'torchvision':
-                outputs = model(images)['out']
-            elif model_type == 'smp':
-                outputs = model(images)
+            with torch.cuda.amp.autocast():
+                if model_type == 'torchvision':
+                    outputs = model(images)['out']
+                elif model_type == 'smp':
+                    outputs = model(images)
 
-            loss = criterion(outputs, masks)
+                loss = criterion(outputs, masks)
             optimizer.zero_grad()
-            optimizer.step()
             scaler.scale(loss).backward()
-            scaler.step(optimizer)
+            scaler.step(optimizer) # scaler를 통해 optimizer의 step을 진햄함.
             scaler.update()
 
             
