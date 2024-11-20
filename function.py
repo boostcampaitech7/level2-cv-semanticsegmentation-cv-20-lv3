@@ -1,5 +1,6 @@
 import datetime
 import os
+import pandas as pd
 import numpy as np
 import random
 import json
@@ -252,10 +253,6 @@ def csv_to_json(config, height=2048, width=2048):
         result_file_name = os.path.join(result_file_dir, f"{config['exp_name']}.csv")
         output_dir = os.path.join(os.path.dirname(config['paths']['test']['image']), os.path.basename(config['paths']['train']['label']))
 
-        print(result_file_name)
-        print(output_dir)
-
-        assert False
         # CSV 파일 읽기
         db = pd.read_csv(result_file_name)
         print(f"CSV 파일이 성공적으로 로드되었습니다: {result_file_name}")
