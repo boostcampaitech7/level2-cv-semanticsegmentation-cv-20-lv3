@@ -3,6 +3,7 @@ train
 test
 data.tar.gz
 *.csv
+meta_data.xlsx
 
 # baseline 처리
 baseline_code.*
