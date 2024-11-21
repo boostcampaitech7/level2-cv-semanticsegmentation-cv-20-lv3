@@ -16,4 +16,4 @@ __pycache__/
 *.pt
 wandb
 checkpoints
-nohup.out
+*.out
