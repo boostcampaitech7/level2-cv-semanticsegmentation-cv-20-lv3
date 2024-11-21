@@ -69,7 +69,7 @@ def main(config, CLASSES, CLASS2IND):
         dataset=valid_dataset, 
         batch_size=config['training']['batch_size']['val'],
         shuffle=False,
-        num_workers=4,
+        num_workers=0,
         drop_last=False
     )
 
