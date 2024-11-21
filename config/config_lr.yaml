@@ -4,7 +4,7 @@ exp_name: "basetest" # 실험 결과 저장
 
 # General Settings
 random_seed: 20
-debug: false
+debug: False
 
 # Model Configuration
 model:
@@ -58,5 +58,9 @@ training:
   batch_size:
     train: 1
     val: 1
-  num_epochs: 30
+  num_epochs: 100
   validate_every: 1
+
+early_stopping:
+  patience: 10 #  Validation 단계에서 성능 향상이 없더라도 대기할 최대 횟수
+  delta: 0.01 # 성능 지표(valid_dice)가 개선되었다고 간주할 최소 변화량

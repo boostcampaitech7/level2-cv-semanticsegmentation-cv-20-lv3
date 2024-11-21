@@ -91,7 +91,7 @@ def main(config, CLASSES, CLASS2IND):
     set_seed(config['random_seed'])
 
     train(model, config['training']['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['training']['validate_every'], SAVED_DIR, config['model']['name'], config['model']['type'],
-          scheduler = scheduler)
+          config['early_stopping']['patience'], config['early_stopping']['delta'], scheduler = scheduler)
 
 if __name__ == '__main__':
     main()
