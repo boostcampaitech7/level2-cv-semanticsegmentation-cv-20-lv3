@@ -6,6 +6,8 @@ from tqdm import tqdm
 import torch.nn.functional as F
 import datetime
 import wandb
+import ttach as tta
+import torch.nn as nn
 import time
 
 def dice_coef(y_true, y_pred):
@@ -90,36 +92,42 @@ def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.
     print(f'avg_dice: {avg_dice}')
     return avg_dice
 
-def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, model_type):
+def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, model_type, patience, delta, scheduler=None):
     
     print(f'Start training..')
     
     best_dice = 0.
-    patience = 10  # EarlyStopping patience
-    early_stopping = EarlyStopping(patience=patience, verbose=True, delta=0.01)
+    # patience = 10  # EarlyStopping patience
+    early_stopping = EarlyStopping(patience=patience, verbose=True, delta = delta)
     scaler = torch.cuda.amp.GradScaler()
-    
+  
     for epoch in range(NUM_EPOCHS):
         start_time = time.time()  # 에포크 시작 시간 기록
 
         model.train()
-        wandb.log({'Epoch' : epoch})
+        print(f"Epoch {epoch + 1}/{NUM_EPOCHS}")
+        
+        # 에포크 시작 시 로깅
+        wandb.log({'Epoch': epoch + 1})
+        
         for step, (images, masks) in enumerate(train_loader):            
             # gpu 연산을 위해 device 할당합니다.
             images, masks = images.cuda(), masks.cuda()
             model = model.cuda()
+            
             with torch.cuda.amp.autocast():
                 if model_type == 'torchvision':
                     outputs = model(images)['out']
                 elif model_type == 'smp':
                     outputs = model(images)
-            
-                # loss를 계산합니다.
+
                 loss = criterion(outputs, masks)
             optimizer.zero_grad()
+            
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
+
             
             # step 주기에 따라 loss를 출력합니다.
             if (step + 1) % 25 == 0:
@@ -129,7 +137,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                     f'Step [{step+1}/{len(train_loader)}], '
                     f'Loss: {round(loss.item(),4)}'
                 )
-                wandb.log({'Train_loss' : loss})
+                wandb.log({'Train_loss' : loss.item()})
 
         end_time = time.time()
         epoch_time = end_time - start_time
@@ -138,7 +146,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (epoch + 1) % VAL_EVERY == 0:
             dice = validation(epoch + 1, model, CLASSES, val_loader, criterion, model_type)
-            wandb.log({'Average_dice' : dice})
+            wandb.log({'Average_dice': dice})
 
             early_stopping(dice, model, epoch + 1)
 
@@ -155,11 +163,18 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                     print(f"Early stopping triggered at epoch {epoch + 1}. Best model saved at epoch {early_stopping.best_epoch}.")
                 break
 
-
+        # 스케줄러 업데이트
+        if scheduler is not None:
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(best_dice)  # validation metric 기반 업데이트
+            else:
+                scheduler.step()
+            wandb.log({'Learning_rate': optimizer.param_groups[0]['lr']})
  
     if not early_stopping.early_stop:
         save_model(model, SAVED_DIR, f'{model_name}_last_epoch.pt')
         print(f'Training completed. Final model saved as {model_name}_last_epoch.pt')
+
 
 def encode_mask_to_rle(mask):
     '''
@@ -177,6 +192,7 @@ def encode_mask_to_rle(mask):
 # RLE로 인코딩된 결과를 mask map으로 복원합니다.
 
 def decode_rle_to_mask(rle, height, width):
+
     s = rle.split()
     starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
     starts -= 1
@@ -249,3 +265,42 @@ class EarlyStopping:
                 print(f"EarlyStopping counter: {self.counter} out of {self.patience}")
             if self.counter >= self.patience:
                 self.early_stop = True
+
+
+def tta_func(model, tta_transforms, IND2CLASS, data_loader, model_type, thr=0.5):
+
+    if model_type == 'torchvision':
+        class CustomSegmentationModel(nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+
+            def forward(self, x):
+                outputs = self.model(x)
+                return outputs['out']
+
+        model = CustomSegmentationModel(model)
+    
+    model = model.cuda()
+    model.eval()
+
+    rles = []
+    filename_and_class = []
+    with torch.no_grad():
+
+        for step, (images, image_names) in tqdm(enumerate(data_loader), total=len(data_loader)):
+            images = images.cuda()
+
+            tta_model = tta.SegmentationTTAWrapper(model, tta_transforms)
+            outputs = tta_model(images)
+            outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
+            outputs = torch.sigmoid(outputs)
+            outputs = (outputs > thr).detach().cpu().numpy()
+            
+            for output, image_name in zip(outputs, image_names):
+                for c, segm in enumerate(output):
+                    rle = encode_mask_to_rle(segm)
+                    rles.append(rle)
+                    filename_and_class.append(f"{IND2CLASS[c]}_{image_name}")
+                    
+    return rles, filename_and_class

@@ -1,0 +1,66 @@
+# Project Settings
+proj_name: "baseline"
+exp_name: "basetest" # 실험 결과 저장
+
+# General Settings
+random_seed: 20
+debug: False
+
+# Model Configuration
+model:
+  type: "torchvision"
+  name: "fcn_resnet50"
+  pretrained: true
+
+# Optimizer & Scheduler Configuration
+optimizer:
+  type: "Adam"
+  lr: 0.0001
+
+criterion: "BCEWithLogitsLoss"
+
+# lr_scheduler:
+#   type: 'ReduceLROnPlateau'  # 'CosineAnnealingLR', 'StepLR', 'ReduceLROnPlateau' 등
+#   params:
+#     factor: 0.1
+#     patience: 5
+#     mode: 'min'
+
+# lr_scheduler:
+#   type: "CosineAnnealingLR"         # 스케줄러 종류 (예: CosineAnnealingLR)
+#   params:                           # 스케줄러에 필요한 파라미터들
+#     T_max: 10                       # CosineAnnealingLR에 필요한 파라미터
+#     eta_min: 0.0001                      # 최소 학습률
+
+
+# Dataset Paths
+paths:
+  train:
+    image: "/data/ephemeral/home/data/train/DCM"
+    label: "/data/ephemeral/home/data/train/outputs_json"
+  test:
+    image: "/data/ephemeral/home/data/test/DCM"
+  model:
+    save_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result"
+    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/basetest/fcn_resnet50.pt"
+
+# Data Augmentation
+transform:
+  type: albumentations
+  augmentations:
+    - type: Resize
+      params:
+        height: 256
+        width: 256
+
+# Training Configuration
+training:
+  batch_size:
+    train: 1
+    val: 1
+  num_epochs: 100
+  validate_every: 1
+
+early_stopping:
+  patience: 10 #  Validation 단계에서 성능 향상이 없더라도 대기할 최대 횟수
+  delta: 0.01 # 성능 지표(valid_dice)가 개선되었다고 간주할 최소 변화량

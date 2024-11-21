@@ -38,12 +38,22 @@ class modelSelector:
         # 선택된 라이브러리에 따라 적절한 변환 객체를 생성
         if self.model_config['type'] == 'torchvision':
             model = torchvisionModel(self.model_config).get_model()
+            model = changeModule(model, self.model_config['name'], self.num_classes)
         elif self.model_config['type'] == 'smp':
             model = smpModel(self.model_config, self.num_classes).get_model()
 
-        return changeModule(model, self.model_config['name'], self.num_classes)
+        return model
     
 def changeModule(model, model_name, num_classes):
     if "fcn" in model_name:
         model.classifier[4] = nn.Conv2d(512, num_classes, kernel_size=1)
+    if "deeplabv3" in model_name:
+        model.classifier[4] = nn.Conv2d(256, num_classes, kernel_size=1)
+    if "lraspp" in model_name:
+        model.classifier.low_classifier = nn.Conv2d(
+            model.classifier.low_classifier.in_channels, num_classes, kernel_size=1
+        )
+        model.classifier.high_classifier = nn.Conv2d(
+            model.classifier.high_classifier.in_channels, num_classes, kernel_size=1
+        )
     return model
