@@ -1,6 +1,6 @@
 # Project Settings
-proj_name: "baseline"
-exp_name: "basetest_1024_1024_30 epoch" # 실험 결과 저장
+proj_name : pseudo_label
+exp_name : fcn_resnet50_with_pseudo
 
 # General Settings
 random_seed: 20
@@ -12,6 +12,13 @@ model:
   name: "fcn_resnet50"
   pretrained: true
 
+# model:
+#   type: smp
+#   arch: unetplusplus
+#   encoder_name: resnet50
+#   name: unetpp_resnet50
+#   encoder_weights: imagenet
+#   in_channels: 3
 
 # Optimizer & Scheduler Configuration
 optimizer:
@@ -35,7 +42,7 @@ criterion: "BCEWithLogitsLoss"
 
 # Pseudo-Labeling Configuration
 pseudo_labeling:
-  enabled: false               # Pseudo-labeling 사용 여부
+  enabled: true               # Pseudo-labeling 사용 여부
   confidence_threshold: 0.9   # Pseudo-labeling에 사용할 최소 신뢰도
   max_pseudo_samples: 1000    # 사용할 최대 pseudo-label 샘플 수
   pseudo_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/outputs_json"  # Pseudo-label 파일 저장 경로
@@ -50,7 +57,7 @@ paths:
     image: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/DCM"
   model:
     save_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result"
-    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/basetest/fcn_resnet50.pt"
+    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/fcn_resnet50_with_pseudo/fcn_resnet50.pt"
 
 # Data Augmentation
 transform:
@@ -64,7 +71,17 @@ transform:
 # Training Configuration
 training:
   batch_size:
-    train: 4
-    val: 8
+    train: 2
+    val: 4
   num_epochs: 30
   validate_every: 1
+
+
+TTA:
+  used: false
+  augmentations:
+    - type: HorizontalFlip
+      params:
+    - type: Multiply
+      params:
+        factors: [0.9, 1, 1.1, 1.2]
