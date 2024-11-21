@@ -6,6 +6,7 @@ from tqdm import tqdm
 import torch.nn.functional as F
 import datetime
 import wandb
+import time
 
 def dice_coef(y_true, y_pred):
     y_true_f = y_true.flatten(2)
@@ -86,6 +87,7 @@ def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.
     print(dice_str)
     
     avg_dice = torch.mean(dices_per_class).item()
+    print(f'avg_dice: {avg_dice}')
     return avg_dice
 
 def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, model_type):
@@ -93,10 +95,13 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
     print(f'Start training..')
     
     best_dice = 0.
-
+    patience = 10  # EarlyStopping patience
+    early_stopping = EarlyStopping(patience=patience, verbose=True, delta=0.01)
     scaler = torch.cuda.amp.GradScaler()
     
     for epoch in range(NUM_EPOCHS):
+        start_time = time.time()  # 에포크 시작 시간 기록
+
         model.train()
         wandb.log({'Epoch' : epoch})
         for step, (images, masks) in enumerate(train_loader):            
@@ -125,17 +130,36 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                     f'Loss: {round(loss.item(),4)}'
                 )
                 wandb.log({'Train_loss' : loss})
-             
+
+        end_time = time.time()
+        epoch_time = end_time - start_time
+        print(f'Epoch [{epoch+1}/{NUM_EPOCHS}] completed in {epoch_time:.2f} seconds.')    
+
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (epoch + 1) % VAL_EVERY == 0:
             dice = validation(epoch + 1, model, CLASSES, val_loader, criterion, model_type)
             wandb.log({'Average_dice' : dice})
-            if best_dice < dice:
-                print(f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}")
-                print(f"Save model in {SAVED_DIR}")
-                best_dice = dice
-                save_model(model, SAVED_DIR, f'{model_name}.pt')
-    
+
+            early_stopping(dice, model, epoch + 1)
+
+            if early_stopping.verbose:
+                print(f"Current best score: {early_stopping.best_score:.4f} at epoch {early_stopping.best_epoch}")
+
+            if early_stopping.early_stop:
+                if dice > early_stopping.best_epoch:
+                    save_model(model, SAVED_DIR, f"{model_name}_best_{epoch + 1}_epoch.pt")
+                    print(f"Early stopping triggered at epoch {epoch + 1}. Best model saved at epoch {epoch + 1}.")
+
+                else:    
+                    save_model(early_stopping.best_model_state,SAVED_DIR,f"{model_name}_best_{early_stopping.best_epoch}_epoch.pt"            )
+                    print(f"Early stopping triggered at epoch {epoch + 1}. Best model saved at epoch {early_stopping.best_epoch}.")
+                break
+
+
+ 
+    if not early_stopping.early_stop:
+        save_model(model, SAVED_DIR, f'{model_name}_last_epoch.pt')
+        print(f'Training completed. Final model saved as {model_name}_last_epoch.pt')
 
 def encode_mask_to_rle(mask):
     '''
@@ -190,3 +214,38 @@ def test(model, IND2CLASS, data_loader, model_type, thr=0.5):
                     filename_and_class.append(f"{IND2CLASS[c]}_{image_name}")
                     
     return rles, filename_and_class
+
+
+class EarlyStopping:
+    def __init__(self, patience=5, verbose=False, delta=0.01):
+        """
+        Args:
+            patience (int): 개선되지 않아도 기다리는 최대 에포크 수
+            verbose (bool): 개선될 때마다 로그를 출력할지 여부
+            delta (float): 개선된 것으로 간주하기 위한 최소 변화량
+        """
+        self.patience = patience
+        self.verbose = verbose
+        self.delta = delta
+        self.best_score = None
+        self.early_stop = False
+        self.counter = 0
+        self.best_epoch = -1
+        self.best_model_state = None
+
+    def __call__(self, val_score, model, epoch):
+        score = val_score
+
+        if self.best_score is None or score > self.best_score + self.delta:
+            self.best_score = score
+            self.best_epoch = epoch
+            self.counter = 0
+            self.best_model_state = model.state_dict()  # Best 모델 상태 저장
+            if self.verbose:
+                print(f"Improved score to {score:.4f} at epoch {epoch}")
+        else:
+            self.counter += 1
+            if self.verbose:
+                print(f"EarlyStopping counter: {self.counter} out of {self.patience}")
+            if self.counter >= self.patience:
+                self.early_stop = True
