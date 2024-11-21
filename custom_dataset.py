@@ -55,10 +55,7 @@ class XRayDataset(Dataset):
         return len(self.filenames)
     
     def __getitem__(self, item):
-        # try:
-        # train / test img_root 가 각각 다름
-        # 그래서 image_name에 train/test를 붙이기로 함
-        # 그리고 그 앞에 data까지의 경로만 출력
+
         '''
         그럼 train에서
         image_name = train/DCM/IDXXX/image166XXX~.png
@@ -101,12 +98,13 @@ class XRayDataset(Dataset):
             c = ann["label"]
             class_ind = self.CLASS2IND[c]
             points = np.array(ann["points"])
-
             # polygon 포맷을 dense한 mask 포맷으로 바꿉니다.
             class_label = np.zeros(image.shape[:2], dtype=np.uint8)
-            cv2.fillPoly(class_label, [points], 1)
+
+            # pseudo labeling이므로, 예측이 아예 안 된 라벨이 존재할 수 있다.
+            if points.size: cv2.fillPoly(class_label, [points], 1)
             label[..., class_ind] = class_label
-        
+
         if self.transforms is not None:
             inputs = {"image": image, "mask": label} if self.is_train else {"image": image}
             result = self.transforms(**inputs)
@@ -121,11 +119,6 @@ class XRayDataset(Dataset):
         image = torch.from_numpy(image).float()
         label = torch.from_numpy(label).float()
 
-        
-            
-        # except:
-        #     print(image_name, label_name)
-        #     print(points.shape, type(points))            
         return image, label
 
 
@@ -160,3 +153,39 @@ class XRayInferenceDataset(Dataset):
         image = torch.from_numpy(image).float()
             
         return image, image_name
+
+# if __name__ == "__main__":
+    # import yaml
+    # import train
+    # with open('/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/config_lr.yaml', 'r') as f:
+    #     config = yaml.safe_load(f)  # YAML 파일을 파싱하여 딕셔너리로 변환
+    
+    # CLASSES = [
+    # 'finger-1', 'finger-2', 'finger-3', 'finger-4', 'finger-5',
+    # 'finger-6', 'finger-7', 'finger-8', 'finger-9', 'finger-10',
+    # 'finger-11', 'finger-12', 'finger-13', 'finger-14', 'finger-15',
+    # 'finger-16', 'finger-17', 'finger-18', 'finger-19', 'Trapezium',
+    # 'Trapezoid', 'Capitate', 'Hamate', 'Scaphoid', 'Lunate',
+    # 'Triquetrum', 'Pisiform', 'Radius', 'Ulna',
+    # ]
+
+    # CLASS2IND = {v: i for i, v in enumerate(CLASSES)}
+    # IND2CLASS = {v: k for k, v in CLASS2IND.items()}
+    # IMAGE_ROOT = config['paths']['train']['image']
+    # LABEL_ROOT = config['paths']['train']['label']
+    # DATA_ROOT = config['paths']['data']
+
+    # TEST_IMAGE_ROOT = config['paths']['test']['image']
+    # TEST_LABEL_ROOT = config['pseudo_labeling']['pseudo_dir']
+    # pngs, jsons = train.load_data(TEST_IMAGE_ROOT, TEST_LABEL_ROOT, DATA_ROOT)
+    # pngs = sorted(pngs)
+    # jsons = sorted(jsons)
+    # train_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=None, debug=config['debug'])
+    
+    # train_loader = DataLoader(
+    #     dataset=train_dataset, 
+    #     batch_size=config['training']['batch_size']['train'],
+    #     shuffle=True,
+    #     num_workers=8,
+    #     drop_last=True,
+    # )

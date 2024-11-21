@@ -341,7 +341,7 @@ def csv_to_json(config, height=2048, width=2048):
         print(f"오류가 발생했습니다: {e}")
         raise e
 
-if __name__ == "__main__":
-    with open('/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/config_lr.yaml', 'r') as f:
-        config = yaml.safe_load(f)  # YAML 파일을 파싱하여 딕셔너리로 변환
-    csv_to_json(config)
+# if __name__ == "__main__":
+#     with open('/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/config_lr.yaml', 'r') as f:
+#         config = yaml.safe_load(f)  # YAML 파일을 파싱하여 딕셔너리로 변환
+#     csv_to_json(config)
