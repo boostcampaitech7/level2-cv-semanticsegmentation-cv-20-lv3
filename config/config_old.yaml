@@ -1,0 +1,33 @@
+proj_name : baseline
+exp_name : basetest
+
+random_seed: 20
+debug: True
+
+model:
+  type: torchvision
+  name: fcn_resnet50
+  pretrained: True
+
+train_img: '/data/ephemeral/home/data/train/DCM'
+train_label: '/data/ephemeral/home/data/train/outputs_json'
+test_img: /data/ephemeral/home/data/test/DCM
+pt_saved_dir: '/data/ephemeral/home/ksg/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints'
+pt_loaded_dir: '/data/ephemeral/home/ksg/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints/fcn_resnet50.pt'
+
+transform:
+  transform_type: albumentations
+  augmentations:
+    - type: Resize
+      params:
+        height: 256
+        width: 256
+
+train_batch: 16
+val_batch: 4
+num_epochs: 2
+val_every: 1
+lr: 0.0001
+
+criterion: BCEWithLogitsLoss
+optimizer: Adam
