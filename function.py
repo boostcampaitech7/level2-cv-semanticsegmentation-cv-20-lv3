@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import random
 import json
-import yaml
 
 
 from tqdm import tqdm
@@ -236,6 +235,7 @@ def test(model, IND2CLASS, data_loader, model_type, thr=0.5):
                     filename_and_class.append(f"{IND2CLASS[c]}_{image_name}")
                     
     return rles, filename_and_class
+
 
 
 class EarlyStopping:
