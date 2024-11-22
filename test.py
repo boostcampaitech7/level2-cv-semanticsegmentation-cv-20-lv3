@@ -7,9 +7,10 @@ from torch.utils.data import DataLoader
 from function import test
 from custom_augments import TransformSelector
 
-def main(config, IND2CLASS, thr=0.5):
+def main(config, IND2CLASS):
     IMAGE_ROOT = config['paths']['test']['image']
     SAVED_DIR = config['paths']['model']['save_dir']
+    thr = 0.5 if not config['pseudo_labeling']['enabled'] else config['pseudo_labeling']['confidence_threshold']
 
     model = torch.load(config['paths']['model']['pt_loaded_dir'])
 

@@ -76,7 +76,6 @@ training:
   num_epochs: 30
   validate_every: 1
 
-
 TTA:
   used: false
   augmentations:
