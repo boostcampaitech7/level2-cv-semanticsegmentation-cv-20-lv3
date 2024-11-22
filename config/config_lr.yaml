@@ -1,24 +1,24 @@
 # Project Settings
-proj_name : pseudo_label
-exp_name : fcn_resnet50_with_pseudo
+proj_name : smp_pan
+exp_name : pan_basic
 
 # General Settings
 random_seed: 20
 debug: false
 
-# Model Configuration
-model:
-  type: "torchvision"
-  name: "fcn_resnet50"
-  pretrained: true
-
+# # Model Configuration
 # model:
-#   type: smp
-#   arch: unetplusplus
-#   encoder_name: resnet50
-#   name: unetpp_resnet50
-#   encoder_weights: imagenet
-#   in_channels: 3
+#   type: "torchvision"
+#   name: "fcn_resnet50"
+#   pretrained: true
+
+model:
+  type: smp
+  arch: pan
+  encoder_name: resnet50
+  name: pan
+  encoder_weights: imagenet
+  in_channels: 3
 
 # Optimizer & Scheduler Configuration
 optimizer:
@@ -57,7 +57,7 @@ paths:
     image: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/DCM"
   model:
     save_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result"
-    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/fcn_resnet50_with_pseudo/fcn_resnet50.pt"
+    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/pan_basic/pan.pt"
 
 # Data Augmentation
 transform:
@@ -65,14 +65,14 @@ transform:
   augmentations:
     - type: Resize
       params:
-        height: 1024
-        width: 1024
+        height: 512
+        width: 512
 
 # Training Configuration
 training:
   batch_size:
-    train: 2
-    val: 4
+    train: 4
+    val: 8
   num_epochs: 30
   validate_every: 1
 
