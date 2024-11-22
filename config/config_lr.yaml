@@ -1,6 +1,6 @@
 # Project Settings
 proj_name : smp_pan
-exp_name : pan_basic
+exp_name : pan__real_basic
 
 # General Settings
 random_seed: 20
@@ -42,7 +42,7 @@ criterion: "BCEWithLogitsLoss"
 
 # Pseudo-Labeling Configuration
 pseudo_labeling:
-  enabled: true               # Pseudo-labeling 사용 여부
+  enabled: false               # Pseudo-labeling 사용 여부
   confidence_threshold: 0.9   # Pseudo-labeling에 사용할 최소 신뢰도
   max_pseudo_samples: 1000    # 사용할 최대 pseudo-label 샘플 수
   pseudo_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/outputs_json"  # Pseudo-label 파일 저장 경로
