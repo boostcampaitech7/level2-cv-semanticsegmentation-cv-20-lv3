@@ -4,7 +4,7 @@ exp_name : pan__real_basic
 
 # General Settings
 random_seed: 20
-debug: false
+debug: False
 
 # # Model Configuration
 # model:
@@ -85,3 +85,7 @@ TTA:
     - type: Multiply
       params:
         factors: [0.9, 1, 1.1, 1.2]
+
+early_stopping:
+  patience: 10 #  Validation 단계에서 성능 향상이 없더라도 대기할 최대 횟수
+  delta: 0.01 # 성능 지표(valid_dice)가 개선되었다고 간주할 최소 변화량

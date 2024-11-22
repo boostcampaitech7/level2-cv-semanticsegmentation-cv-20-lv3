@@ -118,29 +118,31 @@ def main(config, CLASSES, CLASS2IND):
     set_seed(config['random_seed'])
 
     train(model, config['training']['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['training']['validate_every'], SAVED_DIR, config['model']['name'], config['model']['type'],
-          scheduler = scheduler)
+          config['early_stopping']['patience'], config['early_stopping']['delta'], scheduler = scheduler)
 
 if __name__ == '__main__':
-    import yaml
-    with open('/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/config_lr.yaml', 'r') as f:
-        config = yaml.safe_load(f)  # YAML 파일을 파싱하여 딕셔너리로 변환
+    pass
+    # import yaml
+    # with open('/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/config_lr.yaml', 'r') as f:
+    #     config = yaml.safe_load(f)  # YAML 파일을 파싱하여 딕셔너리로 변환
     
-    CLASSES = [
-    'finger-1', 'finger-2', 'finger-3', 'finger-4', 'finger-5',
-    'finger-6', 'finger-7', 'finger-8', 'finger-9', 'finger-10',
-    'finger-11', 'finger-12', 'finger-13', 'finger-14', 'finger-15',
-    'finger-16', 'finger-17', 'finger-18', 'finger-19', 'Trapezium',
-    'Trapezoid', 'Capitate', 'Hamate', 'Scaphoid', 'Lunate',
-    'Triquetrum', 'Pisiform', 'Radius', 'Ulna',
-    ]
+    # CLASSES = [
+    # 'finger-1', 'finger-2', 'finger-3', 'finger-4', 'finger-5',
+    # 'finger-6', 'finger-7', 'finger-8', 'finger-9', 'finger-10',
+    # 'finger-11', 'finger-12', 'finger-13', 'finger-14', 'finger-15',
+    # 'finger-16', 'finger-17', 'finger-18', 'finger-19', 'Trapezium',
+    # 'Trapezoid', 'Capitate', 'Hamate', 'Scaphoid', 'Lunate',
+    # 'Triquetrum', 'Pisiform', 'Radius', 'Ulna',
+    # ]
 
-    CLASS2IND = {v: i for i, v in enumerate(CLASSES)}
-    IND2CLASS = {v: k for k, v in CLASS2IND.items()}
-    main(config, CLASSES, CLASS2IND)
+    # CLASS2IND = {v: i for i, v in enumerate(CLASSES)}
+    # IND2CLASS = {v: k for k, v in CLASS2IND.items()}
+    # main(config, CLASSES, CLASS2IND)
 
+    # # main()
+    # # IMAGE_ROOT = "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data"
+    # # for root, _dirs, files in os.walk(IMAGE_ROOT):
+    # #     for fname in files:
+    # #         if os.path.splitext(fname)[1].lower() == ".png":
+    # #             print("rel: ",os.path.relpath(os.path.join(root, fname), start=IMAGE_ROOT))
     # main()
-    # IMAGE_ROOT = "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data"
-    # for root, _dirs, files in os.walk(IMAGE_ROOT):
-    #     for fname in files:
-    #         if os.path.splitext(fname)[1].lower() == ".png":
-    #             print("rel: ",os.path.relpath(os.path.join(root, fname), start=IMAGE_ROOT))
