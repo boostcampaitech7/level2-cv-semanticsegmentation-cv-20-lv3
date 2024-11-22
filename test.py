@@ -10,6 +10,7 @@ from custom_augments import TransformSelector
 def main(config, IND2CLASS):
     IMAGE_ROOT = config['paths']['test']['image']
     SAVED_DIR = config['paths']['model']['save_dir']
+    thr = 0.5 if not config['pseudo_labeling']['enabled'] else config['pseudo_labeling']['confidence_threshold']
 
     model = torch.load(config['paths']['model']['pt_loaded_dir'])
 
@@ -49,7 +50,7 @@ def main(config, IND2CLASS):
             df.to_csv(os.path.join(output, f"{config['exp_name']}_tta.csv"), index=False)
     
     else:
-        rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'])
+        rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'], thr=thr)
 
         classes, filename = zip(*[x.split("_") for x in filename_and_class])
         image_name = [os.path.basename(f) for f in filename]
@@ -58,6 +59,7 @@ def main(config, IND2CLASS):
             "class": classes,
             "rle": rles,
         })
+
 
         output = os.path.join(SAVED_DIR, "output")
         if not os.path.exists(output):

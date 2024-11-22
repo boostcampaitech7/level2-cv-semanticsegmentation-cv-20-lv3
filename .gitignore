@@ -3,6 +3,7 @@ train
 test
 data.tar.gz
 *.csv
+meta_data.xlsx
 
 # baseline 처리
 baseline_code.*
@@ -15,5 +16,5 @@ __pycache__/
 *.pt
 wandb
 checkpoints
-nohup.out
+*.out
 *.log

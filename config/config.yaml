@@ -1,33 +1,90 @@
-proj_name : baseline
-exp_name : basetest
+# Project Settings
+proj_name : smp_pan
+exp_name : pan__real_basic
 
+# General Settings
 random_seed: 20
-debug: True
+debug: False
+
+# # Model Configuration
+# model:
+#   type: "torchvision"
+#   name: "fcn_resnet50"
+#   pretrained: true
 
 model:
-  type: torchvision
-  name: fcn_resnet50
-  pretrained: True
+  type: smp
+  arch: pan
+  encoder_name: resnet50
+  name: pan
+  encoder_weights: imagenet
+  in_channels: 3
 
-train_img: '/data/ephemeral/home/data/train/DCM'
-train_label: '/data/ephemeral/home/data/train/outputs_json'
-test_img: /data/ephemeral/home/data/test/DCM
-pt_saved_dir: '/data/ephemeral/home/ksg/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints'
-pt_loaded_dir: '/data/ephemeral/home/ksg/level2-cv-semanticsegmentation-cv-20-lv3/checkpoints/fcn_resnet50.pt'
+# Optimizer & Scheduler Configuration
+optimizer:
+  type: "Adam"
+  lr: 0.0001
 
+criterion: "BCEWithLogitsLoss"
+
+# lr_scheduler:
+#   type: 'ReduceLROnPlateau'  # 'CosineAnnealingLR', 'StepLR', 'ReduceLROnPlateau' 등
+#   params:
+#     factor: 0.1
+#     patience: 5
+#     mode: 'min'
+
+# lr_scheduler:
+#   type: "CosineAnnealingLR"         # 스케줄러 종류 (예: CosineAnnealingLR)
+#   params:                           # 스케줄러에 필요한 파라미터들
+#     T_max: 10                       # CosineAnnealingLR에 필요한 파라미터
+#     eta_min: 0.0001                      # 최소 학습률
+
+# Pseudo-Labeling Configuration
+pseudo_labeling:
+  enabled: false               # Pseudo-labeling 사용 여부
+  confidence_threshold: 0.9   # Pseudo-labeling에 사용할 최소 신뢰도
+  max_pseudo_samples: 1000    # 사용할 최대 pseudo-label 샘플 수
+  pseudo_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/outputs_json"  # Pseudo-label 파일 저장 경로
+
+# Dataset Paths
+paths:
+  data: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/"
+  train:
+    image: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/train/DCM"
+    label: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/train/outputs_json"
+  test:
+    image: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/DCM"
+  model:
+    save_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result"
+    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/pan_basic/pan.pt"
+
+# Data Augmentation
 transform:
-  transform_type: albumentations
+  type: albumentations
   augmentations:
     - type: Resize
       params:
-        height: 256
-        width: 256
+        height: 512
+        width: 512
 
-train_batch: 16
-val_batch: 4
-num_epochs: 2
-val_every: 1
-lr: 0.0001
+# Training Configuration
+training:
+  batch_size:
+    train: 4
+    val: 8
+  num_epochs: 30
+  validate_every: 1
 
-criterion: BCEWithLogitsLoss
-optimizer: Adam
+TTA:
+  used: false
+  augmentations:
+    - type: HorizontalFlip
+      params:
+    - type: Multiply
+      params:
+        factors: [0.9, 1, 1.1, 1.2]
+
+early_stopping:
+  patience: 10 #  Validation 단계에서 성능 향상이 없더라도 대기할 최대 횟수
+  delta: 0.01 # 성능 지표(valid_dice)가 개선되었다고 간주할 최소 변화량
