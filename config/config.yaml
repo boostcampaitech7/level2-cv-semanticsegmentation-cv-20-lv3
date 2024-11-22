@@ -1,24 +1,24 @@
 # Project Settings
-proj_name : smp_pan
-exp_name : pan__real_basic
+proj_name : ksg_test
+exp_name : baseline_cropped_Debug
 
 # General Settings
 random_seed: 20
-debug: False
+debug: false
 
 # # Model Configuration
-# model:
-#   type: "torchvision"
-#   name: "fcn_resnet50"
-#   pretrained: true
-
 model:
-  type: smp
-  arch: pan
-  encoder_name: resnet50
-  name: pan
-  encoder_weights: imagenet
-  in_channels: 3
+  type: "torchvision"
+  name: "fcn_resnet50"
+  pretrained: true
+
+# model:
+#   type: smp
+#   arch: pan
+#   encoder_name: resnet50
+#   name: pan
+#   encoder_weights: imagenet
+#   in_channels: 3
 
 # Optimizer & Scheduler Configuration
 optimizer:
@@ -88,3 +88,5 @@ TTA:
 early_stopping:
   patience: 10 #  Validation 단계에서 성능 향상이 없더라도 대기할 최대 횟수
   delta: 0.01 # 성능 지표(valid_dice)가 개선되었다고 간주할 최소 변화량
+
+cropped: true

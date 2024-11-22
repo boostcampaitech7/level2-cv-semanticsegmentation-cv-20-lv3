@@ -40,6 +40,8 @@ def load_data(IMAGE_ROOT, LABEL_ROOT, DATA_ROOT = './data', num = None):
     # print(jsons)
     # print(pngs_fn_prefix)
     # print(len(jsons_fn_prefix), len(pngs_fn_prefix), len(jsons_fn_prefix - pngs_fn_prefix))
+    print(pngs)
+    print(jsons)
     assert len(jsons_fn_prefix - pngs_fn_prefix) == 0
     assert len(pngs_fn_prefix - jsons_fn_prefix) == 0
     if num:
@@ -70,6 +72,7 @@ def main(config, CLASSES, CLASS2IND):
         os.makedirs(SAVED_DIR)
 
     pngs, jsons = load_data(IMAGE_ROOT, LABEL_ROOT, DATA_ROOT)
+    print('@@@@@@@@@@@@@@@@@@',len(pngs), len(jsons))
 
     if config['pseudo_labeling']['enabled']:
         TEST_IMAGE_ROOT = config['paths']['test']['image']
@@ -81,11 +84,17 @@ def main(config, CLASSES, CLASS2IND):
     pngs = sorted(pngs)
     jsons = sorted(jsons)
 
+    cropped_pngs = pngs[800:]
+    cropped_jsons = jsons[800:]
+
+    pngs = pngs[:800]
+    jsons = jsons[:800]
     tf = TransformSelector(config['transform']['type'], config['transform']["augmentations"]).get_transform()
 
-    train_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tf, debug=config['debug'])
-    valid_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tf, debug=config['debug'])
-    
+    train_dataset = XRayDataset(pngs, jsons, cropped_pngs, cropped_jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tf, debug=config['debug'], cropped=config['cropped'])
+    valid_dataset = XRayDataset(pngs, jsons, cropped_pngs, cropped_jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tf, debug=config['debug'])
+    print(len(train_dataset), len(valid_dataset))
+    print(train_dataset.filenames)
     train_loader = DataLoader(
         dataset=train_dataset, 
         batch_size=config['training']['batch_size']['train'],
