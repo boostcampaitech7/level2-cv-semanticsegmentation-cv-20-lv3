@@ -22,19 +22,19 @@ CLASSES = [
 
 CLASS2IND = {v: i for i, v in enumerate(CLASSES)}
 
-pngs = [
+pngs = {
     os.path.relpath(os.path.join(root, fname), start=IMAGE_ROOT)
     for root, _dirs, files in os.walk(IMAGE_ROOT)
     for fname in files
     if os.path.splitext(fname)[1].lower() == ".png"
-]
+}
 
-jsons = [
+jsons = {
     os.path.relpath(os.path.join(root, fname), start=LABEL_ROOT)
     for root, _dirs, files in os.walk(LABEL_ROOT)
     for fname in files
     if os.path.splitext(fname)[1].lower() == ".json"
-]
+}
 
 pngs = sorted(pngs)
 jsons = sorted(jsons)
