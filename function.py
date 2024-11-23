@@ -159,12 +159,12 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                 print(f"Current best score: {early_stopping.best_score:.4f} at epoch {early_stopping.best_epoch}")
 
             if early_stopping.early_stop:
-                if dice > early_stopping.best_epoch:
+                if dice > early_stopping.best_score:
                     save_model(model, SAVED_DIR, f"{model_name}_best_{epoch + 1}_epoch.pt")
                     print(f"Early stopping triggered at epoch {epoch + 1}. Best model saved at epoch {epoch + 1}.")
 
                 else:    
-                    save_model(early_stopping.best_model_state,SAVED_DIR,f"{model_name}_best_{early_stopping.best_epoch}_epoch.pt"            )
+                    save_model(early_stopping.best_model,SAVED_DIR,f"{model_name}_best_{early_stopping.best_epoch}_epoch.pt"            )
                     print(f"Early stopping triggered at epoch {epoch + 1}. Best model saved at epoch {early_stopping.best_epoch}.")
                 break
 
@@ -253,7 +253,7 @@ class EarlyStopping:
         self.early_stop = False
         self.counter = 0
         self.best_epoch = -1
-        self.best_model_state = None
+        self.best_model = None
 
     def __call__(self, val_score, model, epoch):
         score = val_score
@@ -262,7 +262,7 @@ class EarlyStopping:
             self.best_score = score
             self.best_epoch = epoch
             self.counter = 0
-            self.best_model_state = model.state_dict()  # Best 모델 상태 저장
+            self.best_model = model  # Best 모델 상태 저장
             if self.verbose:
                 print(f"Improved score to {score:.4f} at epoch {epoch}")
         else:
