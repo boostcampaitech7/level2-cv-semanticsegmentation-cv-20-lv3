@@ -9,9 +9,10 @@ custom_imports = dict(
     imports=[
         'utils.mixin',
         'utils.dataset',
-        'utils.metric'
+        'utils.metric',
+        'mmseg.models.data_preprocessor'
     ],  
-    allow_failed_imports=False 
+    allow_failed_imports=True
 )
 
 data_preprocessor = dict(
@@ -46,7 +47,7 @@ model = dict(
 )
 
 # optimizer
-optimizer = dict(type='AdamW', lr=0.00006, betas=(0.9, 0.999), weight_decay=0.01)
+optimizer = dict(type='AdamW', lr=0.0001, betas=(0.9, 0.999), weight_decay=0.01)
 optim_wrapper = dict(type='OptimWrapper', optimizer=optimizer, clip_grad=None)
 
 # mixed precision
@@ -55,26 +56,30 @@ fp16 = dict(loss_scale='dynamic')
 # learning policy
 param_scheduler = [
     dict(
-        type='LinearLR', start_factor=1e-6, by_epoch=False, begin=0, end=1500
+        type='LinearLR', 
+        start_factor=1e-6, 
+        by_epoch=True, 
+        begin=0, 
+        end=5
     ),
     dict(
         type='PolyLR',
         eta_min=0.0,
         power=1.0,
-        begin=1500,
-        end=20000,
-        by_epoch=False,
+        begin=5,
+        end=100,
+        by_epoch=True,
     )
 ]
 # training schedule for 20k
-train_cfg = dict(type='IterBasedTrainLoop', max_iters=20000, val_interval=2000)
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=100, val_interval=5)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
-    logger=dict(type='LoggerHook', interval=50, log_metric_by_epoch=False),
+    logger=dict(type='LoggerHook', interval=1, log_metric_by_epoch=True),
     param_scheduler=dict(type='ParamSchedulerHook'),
-    checkpoint=dict(type='CheckpointHook', by_epoch=False, interval=2000),
+    checkpoint=dict(type='CheckpointHook', by_epoch=True, interval=10),
     sampler_seed=dict(type='DistSamplerSeedHook'),
     visualization=dict(type='SegVisualizationHook')
 )
