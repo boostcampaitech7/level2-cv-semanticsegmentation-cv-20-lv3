@@ -172,13 +172,24 @@ def load_predictions(image_paths, df, selected_classes):
     return preds
 
 
-def display_data(dataset_option, images, gt=None, preds=None):
-    if dataset_option == 'Train':
-        display_images(images, gt, images)
-    elif dataset_option == 'Test':
-        display_images(images, preds, images)
-    elif dataset_option == 'Inferred Train':
-        display_images(gt, preds, images)
+# def display_data(dataset_option, images, gt=None, preds=None):
+#     if dataset_option == 'Train':
+#         display_images(images, gt, images)
+#     elif dataset_option == 'Test':
+#         display_images(images, preds, images)
+#     elif dataset_option == 'Inferred Train':
+#         display_images(gt, preds, images)
+
+def display_legend():
+    with st.popover("Classes Legend"):
+        cols = st.columns(4)
+        for i, (class_name, color) in enumerate(zip(CLASSES, PALETTE)):
+            with cols[i % 4]:
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    st.image(Image.new('RGB', (20, 20), color), width=30)
+                with col2:
+                    st.write(class_name)
 
 
 def main():
@@ -203,6 +214,7 @@ def main():
 
     if dataset_option == 'Train':
         st.header("Train data & Ground Truth")
+        display_legend()
         image_paths = load_image_paths(dataset_option)
         image_paths = get_paged_data(image_paths)
         images = load_images(image_paths)
@@ -211,6 +223,7 @@ def main():
 
     elif dataset_option == 'Test':
         st.header("Test data & Inference")
+        display_legend()
         csv_fname = input_fname()
         df = load_csv(csv_fname)
         image_paths = sorted(glob.glob(ROOT_PATH[dataset_option] + '/DCM/*/*.png'))
@@ -221,6 +234,7 @@ def main():
 
     elif dataset_option == 'Inferred Train':
         st.header("Ground Truth & Inference")
+        display_legend()
         csv_fname = input_fname()
         df = load_csv(csv_fname)
         image_paths = sorted(glob.glob(ROOT_PATH[dataset_option] + '/DCM/*/*.png'))
