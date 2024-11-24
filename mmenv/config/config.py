@@ -46,7 +46,7 @@ model = dict(
 )
 
 # optimizer
-optimizer = dict(type='AdamW', lr=0.00006, betas=(0.9, 0.999), weight_decay=0.01)
+optimizer = dict(type='AdamW', lr=0.0001, betas=(0.9, 0.999), weight_decay=0.01)
 optim_wrapper = dict(type='OptimWrapper', optimizer=optimizer, clip_grad=None)
 
 # mixed precision
@@ -67,7 +67,19 @@ param_scheduler = [
     )
 ]
 # training schedule for 20k
-train_cfg = dict(type='IterBasedTrainLoop', max_iters=20000, val_interval=2000)
+"""
+iter를 기준으로 훈련 진행 
+* 주요 계산식 
+  - iters_per_epoch = train_size / batch_size
+  - max_iters = iters_per_epoch * epochs
+  - val_interval = iters_per_epoch * interval
+예를 들어, 훈련 데이터 숫자가 640개이고, 훈련 배치 사이즈를 4로 설정하면 iters_per_epoch = 640 / 4 = 160
+100 epochs 학습을 원할 경우 16,000 = 160 * 100를 max_iters로 지정
+10 epoch마다 검증을 수행할 경우 1,600 = 160 * 10을 val_interval로 지정
+"""
+train_cfg = dict(type='IterBasedTrainLoop', 
+                 max_iters=16000, 
+                 val_interval=800)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 default_hooks = dict(
