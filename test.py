@@ -52,7 +52,7 @@ def main(config, IND2CLASS):
     else:
         rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'], thr=thr)
 
-        classes, filename = zip(*[x.split("_") for x in filename_and_class])
+        classes, filename = zip(*[x.split("_", 1) for x in filename_and_class])
         image_name = [os.path.basename(f) for f in filename]
         df = pd.DataFrame({
             "image_name": image_name,
