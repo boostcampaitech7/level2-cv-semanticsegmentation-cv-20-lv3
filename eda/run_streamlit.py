@@ -70,12 +70,13 @@ def get_prediction(rles):
         return np.zeros((1, 256, 256), dtype=np.uint8)
 
 
-def label2rgb(label):
+def label2rgb(label, selected_classes=None):
     image_size = label.shape[1:] + (3, )
     image = np.zeros(image_size, dtype=np.uint8)
 
     for i, class_label in enumerate(label):
-        image[class_label == 1] = PALETTE[i]
+        if selected_classes is None or CLASSES[i] in selected_classes:
+            image[class_label == 1] = PALETTE[i]
 
     return image
 
@@ -134,10 +135,14 @@ def load_csv(fname):
 def update_pagination(total_pages):
     if "page" not in st.session_state:
         st.session_state.page = 0
-    if st.sidebar.button('Previous') and st.session_state.page > 0:
-        st.session_state.page -= 1
-    if st.sidebar.button('Next') and st.session_state.page < total_pages - 1:
-        st.session_state.page += 1
+
+    col1, col2 = st.sidebar.columns(2)
+    with col1:
+        if st.sidebar.button('Prev') and st.session_state.page > 0:
+            st.session_state.page -= 1
+    with col2:
+        if st.sidebar.button('Next') and st.session_state.page < total_pages - 1:
+            st.session_state.page += 1
 
 
 def get_paged_data(image_paths):
@@ -148,22 +153,22 @@ def get_paged_data(image_paths):
     return image_paths[start_idx:end_idx]
 
 
-def load_ground_truth_labels(image_paths):
+def load_ground_truth_labels(image_paths, selected_classes):
     gt = []
     for pth in image_paths:
         label = get_label(pth)
-        gt.append(label2rgb(label))
+        gt.append(label2rgb(label, selected_classes))
     return gt
 
 
-def load_predictions(image_paths, df):
+def load_predictions(image_paths, df, selected_classes):
     preds = []
     for pth in image_paths:
         image_name = pth.split('/')[-1]
         image_df = df[df['image_name'] == image_name]
         rles = image_df['rle'].tolist()
         pred = get_prediction(rles)
-        preds.append(label2rgb(pred))
+        preds.append(label2rgb(pred, selected_classes))
     return preds
 
 
@@ -187,12 +192,21 @@ def main():
         ("Train", "Inferred Train", "Test")
     )
 
+    class_option = st.sidebar.pills(
+        "Choose handbone class. (Whole handbones will be shown if not selected)",
+        options=CLASSES,
+        selection_mode='multi',
+        default=None
+    )
+
+    selected_classes = CLASSES if not class_option else class_option
+
     if dataset_option == 'Train':
         st.header("Train data & Ground Truth")
         image_paths = load_image_paths(dataset_option)
         image_paths = get_paged_data(image_paths)
         images = load_images(image_paths)
-        gt = load_ground_truth_labels(image_paths)
+        gt = load_ground_truth_labels(image_paths, selected_classes)
         display_images(images, gt, image_paths)
 
     elif dataset_option == 'Test':
@@ -202,7 +216,7 @@ def main():
         image_paths = sorted(glob.glob(ROOT_PATH[dataset_option] + '/DCM/*/*.png'))
         image_paths = get_paged_data(image_paths)
         images = load_images(image_paths)
-        preds = load_predictions(image_paths, df)
+        preds = load_predictions(image_paths, df, selected_classes)
         display_images(images, preds, image_paths)
 
     elif dataset_option == 'Inferred Train':
@@ -212,8 +226,8 @@ def main():
         image_paths = sorted(glob.glob(ROOT_PATH[dataset_option] + '/DCM/*/*.png'))
         image_paths = get_paged_data(image_paths)
         images = load_images(image_paths)
-        gt = load_ground_truth_labels(image_paths)
-        preds = load_predictions(image_paths, df)
+        gt = load_ground_truth_labels(image_paths, selected_classes)
+        preds = load_predictions(image_paths, df, selected_classes)
         display_images(gt, preds, image_paths)
 
         
