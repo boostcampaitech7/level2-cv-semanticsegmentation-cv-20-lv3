@@ -136,6 +136,15 @@ def update_pagination(total_pages):
     if "page" not in st.session_state:
         st.session_state.page = 0
 
+    page_numbers = list(range(total_pages))
+    st.sidebar.selectbox(
+        "Go to page",
+        options=page_numbers,
+        index=st.session_state.page,
+        key="page_select",
+        on_change=lambda: st.session_state.update({"page": st.session_state.page_select})
+    )
+
     col1, col2 = st.sidebar.columns(2)
     with col1:
         if st.sidebar.button('Prev') and st.session_state.page > 0:
@@ -171,14 +180,6 @@ def load_predictions(image_paths, df, selected_classes):
         preds.append(label2rgb(pred, selected_classes))
     return preds
 
-
-# def display_data(dataset_option, images, gt=None, preds=None):
-#     if dataset_option == 'Train':
-#         display_images(images, gt, images)
-#     elif dataset_option == 'Test':
-#         display_images(images, preds, images)
-#     elif dataset_option == 'Inferred Train':
-#         display_images(gt, preds, images)
 
 def display_legend():
     with st.popover("Classes Legend"):
