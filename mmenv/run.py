@@ -1,16 +1,10 @@
 import os
-import cv2
 import argparse
-import numpy as np
 import pandas as pd
-import torch
-import torch.nn.functional as F
-from tqdm.auto import tqdm
-from collections import defaultdict
+from mmseg.apis import init_model
 from mmseg.registry import MODELS
 from mmengine.config import Config
-from mmengine.runner import Runner, load_checkpoint
-from mmengine.dataset import Compose
+from mmengine.runner import Runner
 
 from utils import test
 
@@ -28,10 +22,10 @@ CLASS2IND = {v: i for i, v in enumerate(CLASSES)}
 IND2CLASS = {v: k for k, v in CLASS2IND.items()}
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--mode', type=str, required=True, help="Select train or test mode")
-    parser.add_argument('-c', '--config', type=str, required=True, help="Path to the configuration YAML file")
+    parser.add_argument('-c', '--config', type=str, required=True, help="Path to the configuration .py file")
     args = parser.parse_args()
 
     if not args.mode in ['train', 'test']:
@@ -50,11 +44,14 @@ if __name__ == '__main__':
         runner.train()
 
     elif args.mode == 'test':
-        model = MODELS.build(cfg.model)
-        checkpoint = load_checkpoint(
-            model,
-            "/data/ephemeral/home/syp/level2-cv-semanticsegmentation-cv-20-lv3/mmenv/checkpoints/iter_20000.pth",
-            map_location='cpu'
+        model = init_model(
+            cfg, 
+            "./checkpoints/iter_16000.pth", 
+            device='cuda:0'
         )
         df_inference = test.main(cfg, model)
         df_inference.to_csv('submission.csv', index=False)
+
+
+if __name__ == '__main__':
+    main()
