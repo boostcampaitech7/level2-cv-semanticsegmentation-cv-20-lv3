@@ -4,8 +4,8 @@ import albumentations as A
 import pandas as pd
 from custom_dataset import XRayInferenceDataset
 from torch.utils.data import DataLoader
-from function import test
-from custom_augments import TransformSelector
+from function import test, tta_func
+from custom_augments import TransformSelector, TestTimeTransform
 
 def main(config, IND2CLASS):
     IMAGE_ROOT = config['paths']['test']['image']
