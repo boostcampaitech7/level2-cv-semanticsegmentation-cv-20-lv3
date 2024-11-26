@@ -1,16 +1,16 @@
 # Project Settings
-proj_name : 
-exp_name : 
+proj_name : test
+exp_name : test_transforms
 
 # General Settings
 random_seed: 20
 debug: False
 
-# # # Model Configuration
-# model:
-#   type: "torchvision"
-#   name: "fcn_resnet50"
-#   pretrained: true
+# # Model Configuration
+model:
+  type: "torchvision"
+  name: "fcn_resnet50"
+  pretrained: true
 
 # model:
 #   type: smp
@@ -68,6 +68,11 @@ transform:
         params:
           height: 512
           width: 512
+      - type: Rotate
+        params:
+          p: 1.0
+          limit: [-30, 30]
+      
   
   val: 
     type: albumentations
@@ -81,9 +86,9 @@ transform:
 training:
   batch_size:
     train: 8
-    val: 8
+    val: 4
   num_epochs: 100
-  validate_every: 5
+  validate_every: 1
 
 TTA:
   used: false
