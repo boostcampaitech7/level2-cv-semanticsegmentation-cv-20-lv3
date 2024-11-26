@@ -1,0 +1,75 @@
+proj_name : lsh
+exp_name : upernet_swin_large_Lion
+
+# General Settings
+random_seed: 20
+debug: false
+
+# Model Configuration
+model:
+  type: huggingface
+  arch: openmmlab/upernet-swin-large
+  name: upernet_swin_large_Lion
+
+pseudo_labeling:
+  enabled: false               # Pseudo-labeling 사용 여부
+  confidence_threshold: 0.9   # Pseudo-labeling에 사용할 최소 신뢰도
+  max_pseudo_samples: 1000    # 사용할 최대 pseudo-label 샘플 수
+  pseudo_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/outputs_json"  # Pseudo-label 파일 저장 경로
+
+
+# Optimizer & Scheduler Configuration
+optimizer:
+  type: "Lion"
+  lr: 0.0001
+
+lr_scheduler:
+  type: 'ReduceLROnPlateau'  # 'CosineAnnealingLR', 'StepLR', 'ReduceLROnPlateau' 등
+  params:
+    factor: 0.9
+    patience: 4
+    mode: 'min'
+
+criterion: "BCEWithLogitsLoss"
+
+# Dataset Paths
+paths:
+  data: '/data/ephemeral/home/data/'
+  train:
+    image: '/data/ephemeral/home/data/train/DCM'
+    label: "/data/ephemeral/home/data/train/outputs_json"
+  test:
+    image: "/data/ephemeral/home/data/test/DCM"
+  model:
+    save_dir: '/data/ephemeral/home/lsh/result'
+    pt_loaded_dir: '/data/ephemeral/home/lsh/result/upernet_densenet161/upernet_densenet161_best_75_epoch.pt'
+
+# Data Augmentation
+transform:
+  type: albumentations
+  augmentations:
+    - type: Resize
+      params:
+        height: 512
+        width: 512
+
+# Training Configuration
+training:
+  batch_size:
+    train: 1
+    val: 1
+  num_epochs: 100
+  validate_every: 5
+
+TTA:
+  used: false
+  augmentations:
+    - type: HorizontalFlip
+      params:
+    - type: Multiply
+      params:
+        factors: [0.9, 1, 1.1, 1.2]
+
+early_stopping:
+  patience: 10 #  Validation 단계에서 성능 향상이 없더라도 대기할 최대 횟수
+  delta: 0.01 # 성능 지표(valid_dice)가 개선되었다고 간주할 최소 변화량
