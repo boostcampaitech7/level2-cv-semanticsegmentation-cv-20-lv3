@@ -1,24 +1,24 @@
 # Project Settings
-proj_name : smp_pan
-exp_name : pan__real_basic
+proj_name : 
+exp_name : 
 
 # General Settings
 random_seed: 20
 debug: False
 
-# # Model Configuration
+# # # Model Configuration
 # model:
 #   type: "torchvision"
 #   name: "fcn_resnet50"
 #   pretrained: true
 
-model:
-  type: smp
-  arch: pan
-  encoder_name: resnet50
-  name: pan
-  encoder_weights: imagenet
-  in_channels: 3
+# model:
+#   type: smp
+#   arch: pan
+#   encoder_name: resnet50
+#   name: pan
+#   encoder_weights: imagenet
+#   in_channels: 3
 
 # Optimizer & Scheduler Configuration
 optimizer:
@@ -49,32 +49,41 @@ pseudo_labeling:
 
 # Dataset Paths
 paths:
-  data: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/"
+  data: "/data/ephemeral/home/data/"
   train:
-    image: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/train/DCM"
-    label: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/train/outputs_json"
+    image: "/data/ephemeral/home/data/train/DCM"
+    label: "/data/ephemeral/home/data/train/outputs_json"
   test:
-    image: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/data/test/DCM"
+    image: "/data/ephemeral/home/data/test/DCM"
   model:
-    save_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result"
-    pt_loaded_dir: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/pan_basic/pan.pt"
+    save_dir: "/data/ephemeral/home/sungjoo/level2-cv-semanticsegmentation-cv-20-lv3/result"
+    pt_loaded_dir: "/data/ephemeral/home/sungjoo/level2-cv-semanticsegmentation-cv-20-lv3/result/pan_basic/pan.pt"
 
 # Data Augmentation
 transform:
-  type: albumentations
-  augmentations:
-    - type: Resize
-      params:
-        height: 512
-        width: 512
+  train:
+    type: albumentations
+    augmentations:
+      - type: Resize
+        params:
+          height: 512
+          width: 512
+  
+  val: 
+    type: albumentations
+    augmentations:
+      - type: Resize
+        params:
+          height: 512
+          width: 512
 
 # Training Configuration
 training:
   batch_size:
-    train: 4
+    train: 8
     val: 8
-  num_epochs: 30
-  validate_every: 1
+  num_epochs: 100
+  validate_every: 5
 
 TTA:
   used: false
