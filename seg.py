@@ -3,6 +3,7 @@ import argparse
 import yaml
 import train
 import test
+import optimize
 
 CLASSES = [
     'finger-1', 'finger-2', 'finger-3', 'finger-4', 'finger-5',
@@ -34,5 +35,7 @@ if __name__ == '__main__':
 
     if args.mode == 'train':
         train.main(config, CLASSES, CLASS2IND)
-    else:
+    elif args.mode == 'test':
         test.main(config, IND2CLASS)
+    elif args.mode == 'opt':
+        optimize.main(config, CLASSES, CLASS2IND)

@@ -34,7 +34,7 @@ def main(config, IND2CLASS):
 
     if config['TTA']['used']:
             tta_transform = TestTimeTransform(config['TTA']['augmentations']).getTransform()
-            rles, filename_and_class = tta_func(model, tta_transform, IND2CLASS, test_loader, config['model']['type'])
+            rles, filename_and_class = tta_func(model, tta_transform, IND2CLASS, test_loader, config['model']['type'], config['model']['arch'])
 
             classes, filename = zip(*[x.split("_") for x in filename_and_class])
             image_name = [os.path.basename(f) for f in filename]
@@ -50,7 +50,7 @@ def main(config, IND2CLASS):
             df.to_csv(os.path.join(output, f"{config['exp_name']}_tta.csv"), index=False)
     
     else:
-        rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'], thr=thr)
+        rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'], config['model']['arch'], thr=thr)
 
         classes, filename = zip(*[x.split("_", 1) for x in filename_and_class])
         image_name = [os.path.basename(f) for f in filename]
