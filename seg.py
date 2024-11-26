@@ -24,8 +24,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not args.mode in ['train', 'test']:
-        raise Exception("Select train or test mode")
+    if not args.mode in ['train', 'test', 'opt']:
+        raise Exception("Select proper mode")
     
     if not os.path.exists(args.config):
         raise FileNotFoundError(f"Config file {args.config} does not exist.")

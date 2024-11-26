@@ -99,10 +99,8 @@ def objective(trial, config, CLASSES, CLASS2IND):
     LABEL_ROOT = config['paths']['train']['label']
     DATA_ROOT = config['paths']['data']
 
-    learning_rate = trial.suggest_float('learning_rate', 1e-3, 1e-2, log = True)
-    train_batch = trial.suggest_categorical('train_batch', [2, 3])
-    val_batch = trial.suggest_categorical('val_batch', [2, 3])
-    optimizer_type = trial.suggest_categorical('optimizer', ['Adam', 'AdamW', 'SGD', 'Lion'])
+    learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-3, log = True)
+    optimizer_type = trial.suggest_categorical('optimizer', ['Adam', 'AdamW', 'Lion'])
     scheduler_type = trial.suggest_categorical('lr_scheduler', ['CosineAnnealingLR', 'StepLR', 'ReduceLROnPlateau'])
     scheduler_params = {
         'CosineAnnealingLR':{
@@ -125,12 +123,20 @@ def objective(trial, config, CLASSES, CLASS2IND):
     pngs = sorted(pngs)
     jsons = sorted(jsons)
 
-    tft = TransformSelector(config['transform']['train']['type'], config['transform']['train']["augmentations"]).get_transform()
-    tfv = TransformSelector(config['transform']['val']['type'], config['transform']['val']["augmentations"]).get_transform()
+    tft = None
+    tfv = None
+
+    if config['transform']['train'] is not None:
+        tft = TransformSelector(config['transform']['train']['type'], config['transform']['train']["augmentations"]).get_transform()
+    if config['transform']['val'] is not None:
+        tfv = TransformSelector(config['transform']['val']['type'], config['transform']['val']["augmentations"]).get_transform()
     
     train_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tft, debug=config['debug'])
     valid_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tfv, debug=config['debug'])
     
+    train_batch = config['training']['batch_size']['train']
+    val_batch = config['training']['batch_size']['val']
+
     train_loader = DataLoader(
         dataset=train_dataset, 
         batch_size=train_batch,
@@ -162,7 +168,7 @@ def objective(trial, config, CLASSES, CLASS2IND):
     best_dice = 0.
 
     scaler = torch.cuda.amp.GradScaler()
-    epoch = 10
+    epoch = 50
     model.train()
     for e in tqdm(range(epoch)):
         for step, (images, masks) in enumerate(train_loader):            
@@ -193,7 +199,7 @@ def objective(trial, config, CLASSES, CLASS2IND):
             raise optuna.TrialPruned()
 
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
-        if (e + 1) % 5 == 0:
+        if (e + 1) % 10 == 0:
             dice = validation(model, valid_loader, criterion, config['model']['type'], config['model']['arch'])
             best_dice = max(best_dice, dice)
 
