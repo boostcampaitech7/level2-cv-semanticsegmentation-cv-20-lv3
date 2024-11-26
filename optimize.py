@@ -68,7 +68,7 @@ def validation(model, data_loader, criterion, model_type, model_arch, thr=0.5):
             elif model_type == 'huggingface':
                 img_processor = AutoImageProcessor.from_pretrained(model_arch)(images = images, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
                 del images
-                img_processor['pixel_values'] = img_processor['pixel_values'].half().cuda()
+                img_processor['pixel_values'] = img_processor['pixel_values'].cuda()
                 outputs = model(**img_processor)
                 outputs = outputs.logits 
             
