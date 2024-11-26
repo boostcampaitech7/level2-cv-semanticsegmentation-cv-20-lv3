@@ -24,8 +24,11 @@ class smpModel:
             encoder_name = self.encoder_name,
             encoder_weights = self.encoder_weights,
             in_channels = self.in_channels,
-            classes = self.num_classes
+            classes = self.num_classes,
         )
+        for module in self.model.modules():
+            if isinstance(module, nn.BatchNorm2d):
+                module.track_running_stats = False
         return self.model 
 
 class huggingface:

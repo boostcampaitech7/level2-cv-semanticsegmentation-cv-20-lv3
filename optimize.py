@@ -194,14 +194,16 @@ def objective(trial, config, CLASSES, CLASS2IND):
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-        
-        if trial.should_prune():
-            raise optuna.TrialPruned()
 
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (e + 1) % 10 == 0:
             dice = validation(model, valid_loader, criterion, config['model']['type'], config['model']['arch'])
             best_dice = max(best_dice, dice)
+
+        trial.report(best_dice, e)
+
+        if trial.should_prune():
+            raise optuna.TrialPruned()
 
             # 스케줄러 업데이트
         if scheduler is not None:
@@ -221,7 +223,8 @@ def main(config, CLASSES, CLASS2IND):
     wandb.run.save()
 
     sampler = TPESampler(**TPESampler.hyperopt_parameters())
-    study = optuna.create_study(study_name = 'find hyperparameter', direction='maximize', sampler = sampler)
+    pruner = optuna.pruners.HyperbandPruner()
+    study = optuna.create_study(study_name = 'find hyperparameter', direction='maximize', sampler = sampler, pruner = pruner)
     study.optimize(lambda t: objective(t, config, CLASSES, CLASS2IND), n_trials = 3, gc_after_trial=True)
     print(f"Best value: {study.best_value} (params: {study.best_params})")
 
