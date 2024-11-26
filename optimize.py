@@ -125,10 +125,11 @@ def objective(trial, config, CLASSES, CLASS2IND):
     pngs = sorted(pngs)
     jsons = sorted(jsons)
 
-    tf = TransformSelector(config['transform']['type'], config['transform']["augmentations"]).get_transform()
-
-    train_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tf, debug=False)
-    valid_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tf, debug=False)
+    tft = TransformSelector(config['transform']['train']['type'], config['transform']['train']["augmentations"]).get_transform()
+    tfv = TransformSelector(config['transform']['val']['type'], config['transform']['val']["augmentations"]).get_transform()
+    
+    train_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tft, debug=config['debug'])
+    valid_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tfv, debug=config['debug'])
     
     train_loader = DataLoader(
         dataset=train_dataset, 
