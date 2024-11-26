@@ -1,6 +1,7 @@
 from torchvision import models
 import torch.nn as nn
 import segmentation_models_pytorch as smp
+from transformers import UperNetForSemanticSegmentation
 
 class torchvisionModel:
     def __init__(self, model_config):
@@ -27,9 +28,33 @@ class smpModel:
         )
         return self.model 
 
+class huggingface:
+    def __init__(self, model_config, num_classes):
+        self.arch = model_config['arch']
+        self.num_classes = num_classes
+        self.model_name = model_config['name']
+    def get_model(self):
+        if 'upernet' in self.model_name:
+            model = UperNetForSemanticSegmentation.from_pretrained(self.arch)
+
+        model.config.num_labels = self.num_classes
+        old_head = model.decode_head.classifier
+
+        new_head = nn.Conv2d(
+            in_channels = old_head.in_channels,
+            out_channels = self.num_classes,
+            kernel_size = old_head.kernel_size,
+            stride = old_head.stride,
+            padding = old_head.padding,
+            bias = old_head.bias is not None
+        )
+        nn.init.xavier_uniform_(new_head.weight)
+        model.decode_head.classifier = new_head
+        return model
+    
 class modelSelector:
     def __init__(self, model_config, num_classes):
-        if not model_config['type'] in ["torchvision", "smp"]:
+        if not model_config['type'] in ["torchvision", "smp", "huggingface"]:
             raise ValueError("Unknown model library specified.")
         self.model_config = model_config
         self.num_classes = num_classes
@@ -41,7 +66,8 @@ class modelSelector:
             model = changeModule(model, self.model_config['name'], self.num_classes)
         elif self.model_config['type'] == 'smp':
             model = smpModel(self.model_config, self.num_classes).get_model()
-
+        elif self.model_config['type'] == 'huggingface':
+            model = huggingface(self.model_config, self.num_classes).get_model()
         return model
     
 def changeModule(model, model_name, num_classes):

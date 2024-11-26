@@ -110,7 +110,11 @@ def main(config, CLASSES, CLASS2IND):
     criterion = getattr(nn, config['criterion'])()
 
     # Optimizer를 정의합니다.
-    optimizer = getattr(optim, config['optimizer']['type'])(params=model.parameters(), lr=config['optimizer']['lr'], weight_decay=1e-6)
+    if config['optimizer']['type'] == 'Lion':
+        from lion_pytorch import Lion
+        optimizer = Lion(model.parameters(), lr=config['optimizer']['lr'], weight_decay=1e-6)
+    else:
+        optimizer = getattr(optim, config['optimizer']['type'])(params=model.parameters(), lr=config['optimizer']['lr'], weight_decay=1e-6)
     
     # Scheduler 설정
     scheduler = None
@@ -121,7 +125,7 @@ def main(config, CLASSES, CLASS2IND):
 
     set_seed(config['random_seed'])
 
-    train(model, config['training']['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['training']['validate_every'], SAVED_DIR, config['model']['name'], config['model']['type'],
+    train(model, config['training']['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['training']['validate_every'], SAVED_DIR, config['model']['name'], config['model']['type'], config['model']['arch'],
           config['early_stopping']['patience'], config['early_stopping']['delta'], scheduler = scheduler)
 
 # if __name__ == '__main__':
