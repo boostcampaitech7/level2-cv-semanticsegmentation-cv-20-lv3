@@ -14,6 +14,7 @@ import ttach as tta
 import torch.nn as nn
 import time
 
+from transformers import AutoImageProcessor
 
 def dice_coef(y_true, y_pred):
     y_true_f = y_true.flatten(2)
@@ -36,7 +37,7 @@ def set_seed(RANDOM_SEED):
     np.random.seed(RANDOM_SEED)
     random.seed(RANDOM_SEED)
 
-def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.5):
+def validation(epoch, model, CLASSES, data_loader, criterion, model_type, model_arch, thr=0.5):
     print(f'Start validation #{epoch:2d}')
     model.eval()
 
@@ -53,7 +54,13 @@ def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.
                 outputs = model(images)['out']
             elif model_type == 'smp':
                 outputs = model(images)
-            
+            elif model_type == 'huggingface':
+                img_processor = AutoImageProcessor.from_pretrained(model_arch)(images = images, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
+                del images
+                img_processor['pixel_values'] = img_processor['pixel_values'].cuda()
+                outputs = model(**img_processor)
+                outputs = outputs.logits 
+
             output_h, output_w = outputs.size(-2), outputs.size(-1)
             mask_h, mask_w = masks.size(-2), masks.size(-1)
             
@@ -97,7 +104,7 @@ def validation(epoch, model, CLASSES, data_loader, criterion, model_type, thr=0.
     print(f'avg_dice: {avg_dice}')
     return avg_dice
 
-def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, model_type, patience, delta, scheduler=None):
+def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optimizer, VAL_EVERY, SAVED_DIR, model_name, model_type, model_arch, patience, delta, scheduler=None):
     
     print(f'Start training..')
     
@@ -125,6 +132,12 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                     outputs = model(images)['out']
                 elif model_type == 'smp':
                     outputs = model(images)
+                elif model_type == 'huggingface':
+                    img_processor = AutoImageProcessor.from_pretrained(model_arch)(images = images, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
+                    del images
+                    img_processor['pixel_values'] = img_processor['pixel_values'].half().cuda()
+                    outputs = model(**img_processor)
+                    outputs = outputs.logits  
 
                 loss = criterion(outputs, masks)
             optimizer.zero_grad()
@@ -150,7 +163,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
 
         # validation 주기에 따라 loss를 출력하고 best model을 저장합니다.
         if (epoch + 1) % VAL_EVERY == 0:
-            dice = validation(epoch + 1, model, CLASSES, val_loader, criterion, model_type)
+            dice = validation(epoch + 1, model, CLASSES, val_loader, criterion, model_type, model_arch)
             wandb.log({'Average_dice': dice})
 
             early_stopping(dice, model, epoch + 1)
@@ -159,12 +172,12 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
                 print(f"Current best score: {early_stopping.best_score:.4f} at epoch {early_stopping.best_epoch}")
 
             if early_stopping.early_stop:
-                if dice > early_stopping.best_epoch:
+                if dice > early_stopping.best_score:
                     save_model(model, SAVED_DIR, f"{model_name}_best_{epoch + 1}_epoch.pt")
                     print(f"Early stopping triggered at epoch {epoch + 1}. Best model saved at epoch {epoch + 1}.")
 
                 else:    
-                    save_model(early_stopping.best_model_state,SAVED_DIR,f"{model_name}_best_{early_stopping.best_epoch}_epoch.pt"            )
+                    save_model(early_stopping.best_model,SAVED_DIR,f"{model_name}_best_{early_stopping.best_epoch}_epoch.pt"            )
                     print(f"Early stopping triggered at epoch {epoch + 1}. Best model saved at epoch {early_stopping.best_epoch}.")
                 break
 
@@ -209,7 +222,7 @@ def decode_rle_to_mask(rle, height, width):
     
     return img.reshape(height, width)
 
-def test(model, IND2CLASS, data_loader, model_type, thr=0.5):
+def test(model, IND2CLASS, data_loader, model_type, model_arch, thr=0.5):
     model = model.cuda()
     model.eval()
 
@@ -223,7 +236,13 @@ def test(model, IND2CLASS, data_loader, model_type, thr=0.5):
                 outputs = model(images)['out']
             elif model_type == 'smp':
                 outputs = model(images)
-            
+            elif model_type == 'huggingface':
+                img_processor = AutoImageProcessor.from_pretrained(model_arch)(images = images, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
+                del images
+                img_processor['pixel_values'] = img_processor['pixel_values'].half().cuda()
+                outputs = model(**img_processor)
+                outputs = outputs.logits
+
             outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
             outputs = torch.sigmoid(outputs)
             outputs = (outputs > thr).detach().cpu().numpy()
@@ -253,7 +272,7 @@ class EarlyStopping:
         self.early_stop = False
         self.counter = 0
         self.best_epoch = -1
-        self.best_model_state = None
+        self.best_model = None
 
     def __call__(self, val_score, model, epoch):
         score = val_score
@@ -262,7 +281,7 @@ class EarlyStopping:
             self.best_score = score
             self.best_epoch = epoch
             self.counter = 0
-            self.best_model_state = model.state_dict()  # Best 모델 상태 저장
+            self.best_model = model  # Best 모델 상태 저장
             if self.verbose:
                 print(f"Improved score to {score:.4f} at epoch {epoch}")
         else:
@@ -273,7 +292,7 @@ class EarlyStopping:
                 self.early_stop = True
 
 
-def tta_func(model, tta_transforms, IND2CLASS, data_loader, model_type, thr=0.5):
+def tta_func(model, tta_transforms, IND2CLASS, data_loader, model_type, model_arch, thr=0.5):
 
     if model_type == 'torchvision':
         class CustomSegmentationModel(nn.Module):
@@ -287,6 +306,20 @@ def tta_func(model, tta_transforms, IND2CLASS, data_loader, model_type, thr=0.5)
 
         model = CustomSegmentationModel(model)
     
+    elif model_type == 'huggingface':
+        class CustomSegmentationModel(nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+
+            def forward(self, x):
+                img_processor = AutoImageProcessor.from_pretrained(model_arch)(images = x, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
+                img_processor['pixel_values'] = img_processor['pixel_values'].half().cuda()
+                outputs = model(**img_processor)
+                outputs = outputs.logits
+
+        model = CustomSegmentationModel(model)
+
     model = model.cuda()
     model.eval()
 

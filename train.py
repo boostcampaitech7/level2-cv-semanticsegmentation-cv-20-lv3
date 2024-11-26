@@ -81,10 +81,17 @@ def main(config, CLASSES, CLASS2IND):
 
     pngs = pngs[:800]
     jsons = jsons[:800]
-    tf = TransformSelector(config['transform']['type'], config['transform']["augmentations"]).get_transform()
+    tft = None
+    tfv = None
 
-    train_dataset = XRayDataset(pngs, jsons, cropped_pngs, cropped_jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tf, debug=config['debug'], cropped=config['cropped'])
-    valid_dataset = XRayDataset(pngs, jsons, cropped_pngs, cropped_jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tf, debug=config['debug'])
+    if config['transform']['train'] is not None:
+        tft = TransformSelector(config['transform']['train']['type'], config['transform']['train']["augmentations"]).get_transform()
+    if config['transform']['val'] is not None:
+        tfv = TransformSelector(config['transform']['val']['type'], config['transform']['val']["augmentations"]).get_transform()
+    
+    
+    train_dataset = XRayDataset(pngs, jsons, cropped_pngs, cropped_jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=tft, debug=config['debug'], cropped=config['cropped'])
+    valid_dataset = XRayDataset(pngs, jsons, cropped_pngs, cropped_jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=False, transforms=tfv, debug=config['debug'])
     print(len(train_dataset), len(valid_dataset))
     
     train_loader = DataLoader(
@@ -110,7 +117,11 @@ def main(config, CLASSES, CLASS2IND):
     criterion = getattr(nn, config['criterion'])()
 
     # Optimizer를 정의합니다.
-    optimizer = getattr(optim, config['optimizer']['type'])(params=model.parameters(), lr=config['optimizer']['lr'], weight_decay=1e-6)
+    if config['optimizer']['type'] == 'Lion':
+        from lion_pytorch import Lion
+        optimizer = Lion(model.parameters(), lr=config['optimizer']['lr'], weight_decay=1e-6)
+    else:
+        optimizer = getattr(optim, config['optimizer']['type'])(params=model.parameters(), lr=config['optimizer']['lr'], weight_decay=1e-6)
     
     # Scheduler 설정
     scheduler = None
@@ -121,7 +132,7 @@ def main(config, CLASSES, CLASS2IND):
 
     set_seed(config['random_seed'])
 
-    train(model, config['training']['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['training']['validate_every'], SAVED_DIR, config['model']['name'], config['model']['type'],
+    train(model, config['training']['num_epochs'], CLASSES, train_loader, valid_loader, criterion, optimizer, config['training']['validate_every'], SAVED_DIR, config['model']['name'], config['model']['type'], config['model']['arch'],
           config['early_stopping']['patience'], config['early_stopping']['delta'], scheduler = scheduler)
 
 # if __name__ == '__main__':

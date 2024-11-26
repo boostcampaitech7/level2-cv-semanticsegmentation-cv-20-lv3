@@ -4,8 +4,8 @@ import albumentations as A
 import pandas as pd
 from custom_dataset import XRayInferenceDataset
 from torch.utils.data import DataLoader
-from function import test
-from custom_augments import TransformSelector
+from function import test, tta_func
+from custom_augments import TransformSelector, TestTimeTransform
 
 def main(config, IND2CLASS):
     IMAGE_ROOT = config['paths']['test']['image']
@@ -21,8 +21,8 @@ def main(config, IND2CLASS):
         if os.path.splitext(fname)[1].lower() == ".png"
     }
 
-    tf = TransformSelector(config['transform']['type'], config['transform']["augmentations"]).get_transform()
-    test_dataset = XRayInferenceDataset(pngs, IMAGE_ROOT, transforms=tf)
+    # tf = TransformSelector(config['transform']['type'], config['transform']["augmentations"]).get_transform()
+    test_dataset = XRayInferenceDataset(pngs, IMAGE_ROOT, transforms=None)
 
     test_loader = DataLoader(
         dataset=test_dataset, 
@@ -34,7 +34,7 @@ def main(config, IND2CLASS):
 
     if config['TTA']['used']:
             tta_transform = TestTimeTransform(config['TTA']['augmentations']).getTransform()
-            rles, filename_and_class = tta_func(model, tta_transform, IND2CLASS, test_loader, config['model']['type'])
+            rles, filename_and_class = tta_func(model, tta_transform, IND2CLASS, test_loader, config['model']['type'], config['model']['arch'])
 
             classes, filename = zip(*[x.split("_") for x in filename_and_class])
             image_name = [os.path.basename(f) for f in filename]
@@ -50,9 +50,9 @@ def main(config, IND2CLASS):
             df.to_csv(os.path.join(output, f"{config['exp_name']}_tta.csv"), index=False)
     
     else:
-        rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'], thr=thr)
+        rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'], config['model']['arch'], thr=thr)
 
-        classes, filename = zip(*[x.split("_") for x in filename_and_class])
+        classes, filename = zip(*[x.split("_", 1) for x in filename_and_class])
         image_name = [os.path.basename(f) for f in filename]
         df = pd.DataFrame({
             "image_name": image_name,

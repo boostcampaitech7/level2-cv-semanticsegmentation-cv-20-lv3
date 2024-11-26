@@ -1,9 +1,13 @@
 import os
 import argparse
-import yaml
-import train
-import test
-import optimize
+import pandas as pd
+from mmseg.apis import init_model
+from mmseg.registry import MODELS
+from mmengine.config import Config
+from mmengine.runner import Runner
+
+from utils import test
+
 
 CLASSES = [
     'finger-1', 'finger-2', 'finger-3', 'finger-4', 'finger-5',
@@ -17,25 +21,37 @@ CLASSES = [
 CLASS2IND = {v: i for i, v in enumerate(CLASSES)}
 IND2CLASS = {v: k for k, v in CLASS2IND.items()}
 
-if __name__ == '__main__':
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--mode', type=str, required=True, help="Select train or test mode")
-    parser.add_argument('-c', '--config', type=str, required=True, help="Path to the configuration YAML file")
-
+    parser.add_argument('-c', '--config', type=str, required=True, help="Path to the configuration .py file")
     args = parser.parse_args()
 
-    if not args.mode in ['train', 'test', 'opt']:
-        raise Exception("Select proper mode")
+    if not args.mode in ['train', 'test']:
+        raise Exception("Select train or test mode")
     
     if not os.path.exists(args.config):
         raise FileNotFoundError(f"Config file {args.config} does not exist.")
     
-    with open(args.config, 'r') as f:
-        config = yaml.safe_load(f)  # YAML 파일을 파싱하여 딕셔너리로 변환
+    cfg = Config.fromfile(args.config)
+    cfg.launcher = "none"
+    cfg.work_dir = "checkpoints"
 
     if args.mode == 'train':
-        train.main(config, CLASSES, CLASS2IND)
+        cfg.resume = False
+        runner = Runner.from_cfg(cfg)
+        runner.train()
+
     elif args.mode == 'test':
-        test.main(config, IND2CLASS)
-    elif args.mode == 'opt':
-        optimize.main(config, CLASSES, CLASS2IND)
+        model = init_model(
+            cfg, 
+            "./checkpoints/iter_16000.pth", 
+            device='cuda:0'
+        )
+        df_inference = test.main(cfg, model)
+        df_inference.to_csv('submission.csv', index=False)
+
+
+if __name__ == '__main__':
+    main()
