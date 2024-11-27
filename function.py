@@ -165,7 +165,7 @@ def train(model, NUM_EPOCHS, CLASSES, train_loader, val_loader, criterion, optim
         if (epoch + 1) % VAL_EVERY == 0:
             dice = validation(epoch + 1, model, CLASSES, val_loader, criterion, model_type, model_arch)
             wandb.log({'Average_dice': dice})
-
+            save_model(model, SAVED_DIR, f"{model_name}_{epoch + 1}_epoch.pt")
             early_stopping(dice, model, epoch + 1)
 
             if early_stopping.verbose:
