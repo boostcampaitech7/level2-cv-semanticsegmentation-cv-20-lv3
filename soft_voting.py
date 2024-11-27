@@ -222,8 +222,10 @@ def soft_voting(cfg):
                     for model in models:
                         outputs = model(image_dict[name].to(device))
                         if type(outputs) != torch.Tensor:
-                            outputs = outputs['out']
-                        # print(type(outputs['out']))
+                            try:
+                                outputs = outputs['out']
+                            except:
+                                outputs = outputs.logits
                         outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
                         outputs = torch.sigmoid(outputs)
                         total_output += outputs
