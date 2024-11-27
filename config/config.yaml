@@ -4,7 +4,7 @@ exp_name : test_transforms
 
 # General Settings
 random_seed: 20
-debug: False
+debug: false
 
 # # Model Configuration
 model:
@@ -102,3 +102,5 @@ TTA:
 early_stopping:
   patience: 10 #  Validation 단계에서 성능 향상이 없더라도 대기할 최대 횟수
   delta: 0.01 # 성능 지표(valid_dice)가 개선되었다고 간주할 최소 변화량
+
+cropped: true

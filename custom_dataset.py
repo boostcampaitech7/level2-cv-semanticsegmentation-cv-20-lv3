@@ -7,13 +7,15 @@ from sklearn.model_selection import GroupKFold
 from torch.utils.data import Dataset
 
 class XRayDataset(Dataset):
-    def __init__(self, pngs, jsons, data_root, classes, CLASS2IND, is_train=True, transforms=None, debug=False):
+    def __init__(self, pngs, jsons, cropped_pngs, cropped_jsons, data_root, classes, CLASS2IND, is_train=True, transforms=None, debug=False, cropped = False):
         self.data_root = data_root
         self.classes = classes
         self.CLASS2IND = CLASS2IND
 
         _filenames = np.array(pngs)
         _labelnames = np.array(jsons)
+        _cropped_filenames = np.array(cropped_pngs)
+        _cropped_labelnames = np.array(cropped_jsons)
 
         # debug 모드일 때는 전체 데이터를 사용하지 않고 5%만 샘플링합니다.
         if debug:
@@ -45,7 +47,12 @@ class XRayDataset(Dataset):
                     filenames = list(_filenames[y])
                     labelnames = list(_labelnames[y])
                     break  # skip i > 0
-            
+            if cropped:
+                if is_train:
+                    filenames += list(_cropped_filenames)
+                    labelnames += list(_cropped_labelnames)
+            else:
+                pass
             self.filenames = filenames
             self.labelnames = labelnames
             self.is_train = is_train
