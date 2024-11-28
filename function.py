@@ -239,7 +239,7 @@ def test(model, IND2CLASS, data_loader, model_type, model_arch, thr=0.5):
             elif model_type == 'huggingface':
                 img_processor = AutoImageProcessor.from_pretrained(model_arch)(images = images, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
                 del images
-                img_processor['pixel_values'] = img_processor['pixel_values'].half().cuda()
+                img_processor['pixel_values'] = img_processor['pixel_values'].cuda()
                 outputs = model(**img_processor)
                 outputs = outputs.logits
 
@@ -314,9 +314,10 @@ def tta_func(model, tta_transforms, IND2CLASS, data_loader, model_type, model_ar
 
             def forward(self, x):
                 img_processor = AutoImageProcessor.from_pretrained(model_arch)(images = x, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
-                img_processor['pixel_values'] = img_processor['pixel_values'].half().cuda()
-                outputs = model(**img_processor)
+                img_processor['pixel_values'] = img_processor['pixel_values'].cuda()
+                outputs = self.model(**img_processor)
                 outputs = outputs.logits
+                return outputs
 
         model = CustomSegmentationModel(model)
 
@@ -330,7 +331,7 @@ def tta_func(model, tta_transforms, IND2CLASS, data_loader, model_type, model_ar
         for step, (images, image_names) in tqdm(enumerate(data_loader), total=len(data_loader)):
             images = images.cuda()
 
-            tta_model = tta.SegmentationTTAWrapper(model, tta_transforms)
+            tta_model = tta.SegmentationTTAWrapper(model, tta_transforms, merge_mode='max')
             outputs = tta_model(images)
             outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
             outputs = torch.sigmoid(outputs)
