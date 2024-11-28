@@ -19,13 +19,20 @@ num_workers: 2
 threshold: 0.2
 
 model_paths:
-  256: []
-  # 512: []
-  512: 
-    - /data/ephemeral/home/clear/level2-cv-semanticsegmentation-cv-20-lv3/ensemble/pan.pt
-  1024:
-    - /data/ephemeral/home/clear/level2-cv-semanticsegmentation-cv-20-lv3/ensemble/fcn_resnet50_1024_1024_30.pt
-  2048: []
+  hugging_face: []
+  non:
+    256:
+      - /data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/Ensemble/deeplabv3plus_resnet50.pt
+    # 512: []
+    512: 
+      - /data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/Ensemble/deeplabv3plus_regnetx_320.pt
+      - /data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/Ensemble/deeplabv3plus_resnet50.pt
+      - /data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/Ensemble/deeplabv3plus_resnet101.pt
+      - /data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/Ensemble/deeplabv3plus_resnext101_32x8d.pt
+      - /data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/Ensemble/deeplabv3plus_tf_efficientnet_cc_b1_8e.pt
+      - /data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/Ensemble/deeplabv3plus_xception71.pt
+    1024: []
+    2048: []
 
-save_dir: ./soft_ensemble
-output_name: output.csv
+save_dir: /data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/result/Ensemble/result
+output_name: deeplabv3.csv

@@ -8,6 +8,8 @@ import pandas as pd
 import os.path as osp
 import albumentations as A
 import torch.nn.functional as F
+from transformers import PreTrainedModel
+from transformers import AutoImageProcessor
 
 from tqdm import tqdm
 from omegaconf import OmegaConf
@@ -107,6 +109,7 @@ def encode_mask_to_rle(mask):
     runs[1::2] -= runs[::2]
     return ' '.join(str(x) for x in runs)
 
+
 def load_models(cfg, device):
     """
     구성 파일에 지정된 경로에서 모델을 로드합니다.
@@ -192,11 +195,18 @@ def soft_voting(cfg):
     }
 
     tf_dict = {image_size : A.Resize(height=image_size, width=image_size) 
-               for image_size, paths in cfg.model_paths.items() 
+               for image_size, paths in cfg.model_paths['non'].items() 
                if len(paths) != 0}
     
     print("\n======== PipeLine 생성 ========")
     for k, v in tf_dict.items():
+        print(f"{k} 사이즈는 {v} pipeline으로 처리됩니다.")
+
+    hug_dict = {image_size : A.Resize(height=image_size, width=image_size) 
+               for image_size, paths in cfg.model_paths['non'].items() 
+               if len(paths) != 0}
+    
+    for k, v in hug_dict.items():
         print(f"{k} 사이즈는 {v} pipeline으로 처리됩니다.")
 
     dataset = EnsembleDataset(fnames, cfg, tf_dict)
@@ -220,6 +230,12 @@ def soft_voting(cfg):
                 total_output = torch.zeros((cfg.batch_size, len(cfg.CLASSES), 2048, 2048)).to(device)
                 for name, models in model_dict.items():
                     for model in models:
+                        if isinstance(model, PreTrainedModel):
+                            img_processor = AutoImageProcessor.from_pretrained(model_arch)(images = images, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
+                            del images
+                            img_processor['pixel_values'] = img_processor['pixel_values'].half().cuda()
+                            outputs = model(**img_processor)
+                            outputs = outputs.logits                            
                         outputs = model(image_dict[name].to(device))
                         if type(outputs) != torch.Tensor:
                             try:
@@ -245,7 +261,7 @@ def soft_voting(cfg):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="/data/ephemeral/home/clear/level2-cv-semanticsegmentation-cv-20-lv3/config/soft_voting_config.yaml")
+    parser.add_argument("--config", type=str, default="/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/soft_voting_config.yaml")
 
     args = parser.parse_args()
     
