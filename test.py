@@ -21,8 +21,8 @@ def main(config, IND2CLASS):
         if os.path.splitext(fname)[1].lower() == ".png"
     }
 
-    # tf = TransformSelector(config['transform']['type'], config['transform']["augmentations"]).get_transform()
-    test_dataset = XRayInferenceDataset(pngs, IMAGE_ROOT, transforms=None)
+    tfv = TransformSelector(config['transform']['val']['type'], config['transform']['val']["augmentations"]).get_transform()
+    test_dataset = XRayInferenceDataset(pngs, IMAGE_ROOT, transforms=tfv)
 
     test_loader = DataLoader(
         dataset=test_dataset, 
