@@ -1,20 +1,28 @@
 import datetime
 import os
+import os.path as osp
 import pandas as pd
 import numpy as np
 import random
 import json
 
-
+import albumentations as A
+import cv2
 from tqdm import tqdm
 import torch
+from torch.utils.data import DataLoader
+import torch.nn as nn
 import torch.nn.functional as F
 import wandb
 import ttach as tta
-import torch.nn as nn
 import time
-
 from transformers import AutoImageProcessor
+from omegaconf import OmegaConf
+
+import warnings
+warnings.filterwarnings('ignore')
+
+from custom_dataset import EnsembleDataset
 
 def dice_coef(y_true, y_pred):
     y_true_f = y_true.flatten(2)
@@ -36,6 +44,40 @@ def set_seed(RANDOM_SEED):
     torch.backends.cudnn.benchmark = False
     np.random.seed(RANDOM_SEED)
     random.seed(RANDOM_SEED)
+
+def save_results(filename_and_class, rles, 
+                 output_dir='./result', file_name='output.csv'):
+    """
+    추론 결과를 csv 파일로 저장합니다.
+
+    Args:
+        cfg (dict): 출력 설정을 포함하는 구성 객체
+        filename_and_class (list): 파일 이름과 클래스 레이블이 포함된 list
+        rles (list): RLE로 인코딩된 세크멘테이션 마스크들을 가진 list
+    """    
+    classes, filename = zip(*[x.split("_", 1) for x in filename_and_class])
+    image_name = [os.path.basename(f) for f in filename]
+
+    df = pd.DataFrame({
+        "image_name": image_name,
+        "class": classes,
+        "rle": rles,
+    })
+
+    print("\n======== Save Output ========")
+    print(f"{output_dir} 폴더 내부에 {file_name}을 생성합니다..", end="\t")
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_path = osp.join(output_dir, file_name)
+    try:
+        df.to_csv(output_path, index=False)
+    except Exception as e:
+        print(f"{output_path}를 생성하는데 실패하였습니다.. : {e}")
+        raise
+
+    print(f"{osp.join(output_dir, file_name)} 생성 완료")
+
+
 
 def validation(epoch, model, CLASSES, data_loader, criterion, model_type, model_arch, thr=0.5):
     print(f'Start validation #{epoch:2d}')
@@ -433,7 +475,113 @@ def csv_to_json(config, height=2048, width=2048):
         print(f"오류가 발생했습니다: {e}")
         raise e
 
-# if __name__ == "__main__":
-#     with open('/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/config_lr.yaml', 'r') as f:
-#         config = yaml.safe_load(f)  # YAML 파일을 파싱하여 딕셔너리로 변환
-#     csv_to_json(config)
+def load_models(cfg):
+    """
+    구성 파일에 지정된 경로에서 모델을 로드합니다.
+
+    Args:
+        cfg (dict): 모델 경로가 포함된 설정 객체
+    Returns:
+        dict: 처리 이미지 크기별로 모델을 그룹화한 dict
+        int: 로드된 모델의 총 개수
+    """    
+    
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    model_dict = {}
+    model_count = 0
+
+    print("\n======== Model Load ========")
+    # inference 해야하는 이미지 크기 별로 모델 순차저장
+    # 모델 이름 : 모델로 저장
+    # 불러오는 건 한 번만 할 것.
+    for image_size, paths_and_model_infos in cfg.model_paths.items():
+
+        if len(paths_and_model_infos) == 0:
+            continue
+        models = []
+        print(f"{image_size} image size 추론 모델 {len(paths_and_model_infos)}개 불러오기 진행 시작")
+        for paths_and_model_info in paths_and_model_infos:
+            path, model_info = paths_and_model_info['path'], paths_and_model_info['model']
+            print(f"{osp.basename(path)} 모델을 불러오는 중입니다..", end="\t")
+            model = torch.load(path).to(device)
+            model.eval()
+            models.append(model)
+            model_count += 1
+            print("불러오기 성공!")
+        model_dict[image_size] = models
+        print()
+
+    print(f"모델 총 {model_count}개 불러오기 성공!\n")
+    return model_dict, model_count
+
+def soft_voting(cfg):
+    """
+    Soft Voting을 수행합니다. 여러 모델의 예측을 결합하여 최종 예측을 생성
+
+    Args:
+        cfg (dict): 설정을 포함하는 구성 객체
+    """    
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    fnames = {
+        osp.relpath(osp.join(root, fname), start=cfg.image_root)
+        for root, _, files in os.walk(cfg.image_root)
+        for fname in files
+        if osp.splitext(fname)[1].lower() == ".png"
+    }
+
+    tf_dict = {image_size : A.Resize(height=image_size, width=image_size) 
+               for image_size, paths in cfg.model_paths.items() 
+               if len(paths) != 0}
+    
+    print("\n======== PipeLine 생성 ========")
+    for k, v in tf_dict.items():
+        print(f"{k} 사이즈는 {v} pipeline으로 처리됩니다.")
+
+    dataset = EnsembleDataset(fnames, cfg, tf_dict)
+    
+    data_loader = DataLoader(dataset=dataset,
+                             batch_size=cfg.batch_size,
+                             shuffle=False,
+                             num_workers=cfg.num_workers,
+                             drop_last=False,
+                             collate_fn=dataset.collate_fn)
+
+    model_dict, model_count = load_models(cfg)
+    
+    filename_and_class = []
+    rles = []
+
+    print("======== Soft Voting Start ========")
+    with torch.no_grad():
+        with tqdm(total=len(data_loader), desc="[Inference...]", disable=False) as pbar:
+            for image_dict, image_names in data_loader:
+                total_output = torch.zeros((cfg.batch_size, len(cfg.CLASSES), 2048, 2048)).to(device)
+                for image_size, models in model_dict.items():
+                    for idx, model in enumerate(models):
+                        images = image_dict[image_size].to(device)  # 이미지 처리
+                        model_info = cfg['model_paths'][image_size][idx]
+                        if model_info['model']['type'] == 'torchvision':
+                            outputs = model(images)['out']
+                        elif model_info['model']['type'] == 'smp':
+                            outputs = model(images)
+                        elif model_info['model']['type'] == 'huggingface':
+                            img_processor = AutoImageProcessor.from_pretrained(model_info['arch'])(images=images, return_tensors="pt", do_rescale=False, do_resize=False, do_normalize=False)
+                            outputs = model(**img_processor).logits
+                        outputs = F.interpolate(outputs, size=(2048, 2048), mode="bilinear")
+                        outputs = torch.sigmoid(outputs)
+                        total_output += outputs
+                        
+                total_output /= model_count
+                total_output = (total_output > cfg.threshold).detach().cpu().numpy()
+
+                for output, image_name in zip(total_output, image_names):
+                    for c, segm in enumerate(output):
+                        rle = encode_mask_to_rle(segm)
+                        rles.append(rle)
+                        filename_and_class.append(f"{dataset.ind2class[c]}_{image_name}")
+                
+                pbar.update(1)
+
+    save_results(filename_and_class, rles, cfg.save_dir, cfg.output_name)

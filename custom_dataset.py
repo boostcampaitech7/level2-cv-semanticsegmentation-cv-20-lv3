@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from sklearn.model_selection import GroupKFold
 from torch.utils.data import Dataset
+import os.path as osp
 
 class XRayDataset(Dataset):
     def __init__(self, pngs, jsons, cropped_pngs, cropped_jsons, data_root, classes, CLASS2IND, is_train=True, transforms=None, debug=False, cropped = False):
@@ -160,39 +161,84 @@ class XRayInferenceDataset(Dataset):
         image = torch.from_numpy(image).float()
             
         return image, image_name
-
-# if __name__ == "__main__":
-    # import yaml
-    # import train
-    # with open('/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/config_lr.yaml', 'r') as f:
-    #     config = yaml.safe_load(f)  # YAML 파일을 파싱하여 딕셔너리로 변환
     
-    # CLASSES = [
-    # 'finger-1', 'finger-2', 'finger-3', 'finger-4', 'finger-5',
-    # 'finger-6', 'finger-7', 'finger-8', 'finger-9', 'finger-10',
-    # 'finger-11', 'finger-12', 'finger-13', 'finger-14', 'finger-15',
-    # 'finger-16', 'finger-17', 'finger-18', 'finger-19', 'Trapezium',
-    # 'Trapezoid', 'Capitate', 'Hamate', 'Scaphoid', 'Lunate',
-    # 'Triquetrum', 'Pisiform', 'Radius', 'Ulna',
-    # ]
+class EnsembleDataset(Dataset):
+    """
+    Soft Voting을 위한 DataSet 클래스입니다. 이 클래스는 이미지를 로드하고 전처리하는 작업과
+    구성 파일에서 지정된 변환을 적용하는 역할을 수행합니다.
 
-    # CLASS2IND = {v: i for i, v in enumerate(CLASSES)}
-    # IND2CLASS = {v: k for k, v in CLASS2IND.items()}
-    # IMAGE_ROOT = config['paths']['train']['image']
-    # LABEL_ROOT = config['paths']['train']['label']
-    # DATA_ROOT = config['paths']['data']
+    Args:
+        fnames (set) : 로드할 이미지 파일 이름들의 set
+        cfg (dict) : 이미지 루트 및 클래스 레이블 등 설정을 포함한 구성 객체
+        tf_dict (dict) : 이미지에 적용할 Resize 변환들의 dict
+    """    
+    def __init__(self, fnames, cfg, tf_dict):
+        self.fnames = np.array(sorted(fnames))
+        self.image_root = cfg.image_root
+        self.tf_dict = tf_dict
+        self.ind2class = {i : v for i, v in enumerate(cfg.CLASSES)}
 
-    # TEST_IMAGE_ROOT = config['paths']['test']['image']
-    # TEST_LABEL_ROOT = config['pseudo_labeling']['pseudo_dir']
-    # pngs, jsons = train.load_data(TEST_IMAGE_ROOT, TEST_LABEL_ROOT, DATA_ROOT)
-    # pngs = sorted(pngs)
-    # jsons = sorted(jsons)
-    # train_dataset = XRayDataset(pngs, jsons, DATA_ROOT, CLASSES, CLASS2IND, is_train=True, transforms=None, debug=config['debug'])
+    def __len__(self):
+        return len(self.fnames)
     
-    # train_loader = DataLoader(
-    #     dataset=train_dataset, 
-    #     batch_size=config['training']['batch_size']['train'],
-    #     shuffle=True,
-    #     num_workers=8,
-    #     drop_last=True,
-    # )
+    def __getitem__(self, item):
+        """
+        지정된 인덱스에 해당하는 이미지를 로드하여 반환합니다.
+        Args:
+            item (int): 로드할 이미지의 index
+
+        Returns:
+            dict : "image", "image_name"을 키값으로 가지는 dict
+        """        
+        image_name = self.fnames[item]
+        image_path = osp.join(self.image_root, image_name)
+        image = cv2.imread(image_path)
+
+        assert image is not None, f"{image_path} 해당 이미지를 찾지 못했습니다."
+        
+        image = image / 255.0
+        return {"image" : image, "image_name" : image_name}
+
+    def collate_fn(self, batch):
+        """
+        배치 데이터를 처리하는 커스텀 collate 함수입니다.
+
+        Args:
+            batch (list): __getitem__에서 반환된 데이터들의 list
+
+        Returns:
+            dict: 처리된 이미지들을 가지는 dict
+            list: 이미지 이름으로 구성된 list
+        """        
+        images = [data['image'] for data in batch]
+        image_names = [data['image_name'] for data in batch]
+        inputs = {"images" : images}
+
+        image_dict = self._apply_transforms(inputs)
+
+        image_dict = {k : torch.from_numpy(v.transpose(0, 3, 1, 2)).float()
+                      for k, v in image_dict.items()}
+        
+        for image_size, image_batch in image_dict.items():
+            assert len(image_batch.shape) == 4, \
+                f"collate_fn 내부에서 image_batch의 차원은 반드시 4차원이어야 합니다.\n \
+                현재 shape : {image_batch.shape}"
+            assert image_batch.shape == (len(batch), 3, image_size, image_size), \
+                f"collate_fn 내부에서 image_batch의 shape은 ({len(batch)}, 3, {image_size}, {image_size})이어야 합니다.\n \
+                현재 shape : {image_batch.shape}"
+
+        return image_dict, image_names
+    
+    def _apply_transforms(self, inputs):
+        """
+        입력된 이미지에 변환을 적용합니다.
+
+        Args:
+            inputs (dict): 변환할 이미지를 포함하는 딕셔너리
+
+        Returns:
+            dict : 변환된 이미지들
+        """        
+        return {
+            key: np.array(pipeline(**inputs)['images']) for key, pipeline in self.tf_dict.items()
+        }
