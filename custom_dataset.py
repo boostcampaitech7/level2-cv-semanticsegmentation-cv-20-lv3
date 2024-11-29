@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from sklearn.model_selection import GroupKFold
 from torch.utils.data import Dataset
+import os.path as osp
 
 class XRayDataset(Dataset):
     def __init__(self, pngs, jsons, cropped_pngs, cropped_jsons, data_root, classes, CLASS2IND, is_train=True, transforms=None, debug=False, cropped = False):
