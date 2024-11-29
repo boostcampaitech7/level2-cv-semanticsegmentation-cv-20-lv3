@@ -583,16 +583,3 @@ def soft_voting(cfg):
                 pbar.update(1)
 
     save_results(filename_and_class, rles, cfg.save_dir, cfg.output_name)
-
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="/data/ephemeral/home/level2-cv-semanticsegmentation-cv-20-lv3/config/soft_voting_config.yaml")
-
-    args = parser.parse_args()
-    
-    with open(args.config, 'r') as f:
-        cfg = OmegaConf.load(f)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(soft_voting(cfg))
