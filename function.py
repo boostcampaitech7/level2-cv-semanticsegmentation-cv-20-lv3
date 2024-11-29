@@ -55,7 +55,7 @@ def save_results(filename_and_class, rles,
         filename_and_class (list): 파일 이름과 클래스 레이블이 포함된 list
         rles (list): RLE로 인코딩된 세크멘테이션 마스크들을 가진 list
     """    
-    classes, filename = zip(*[x.split("_") for x in filename_and_class])
+    classes, filename = zip(*[x.split("_", 1) for x in filename_and_class])
     image_name = [os.path.basename(f) for f in filename]
 
     df = pd.DataFrame({
