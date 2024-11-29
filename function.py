@@ -475,18 +475,19 @@ def csv_to_json(config, height=2048, width=2048):
         print(f"오류가 발생했습니다: {e}")
         raise e
 
-def load_models(cfg, device):
+def load_models(cfg):
     """
     구성 파일에 지정된 경로에서 모델을 로드합니다.
 
     Args:
         cfg (dict): 모델 경로가 포함된 설정 객체
-        device (torch.device): 모델을 로드할 장치 (CPU or GPU)
-
     Returns:
         dict: 처리 이미지 크기별로 모델을 그룹화한 dict
         int: 로드된 모델의 총 개수
     """    
+    
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     model_dict = {}
     model_count = 0
 
@@ -547,7 +548,7 @@ def soft_voting(cfg):
                              drop_last=False,
                              collate_fn=dataset.collate_fn)
 
-    model_dict, model_count = load_models(cfg, device)
+    model_dict, model_count = load_models(cfg)
     
     filename_and_class = []
     rles = []
