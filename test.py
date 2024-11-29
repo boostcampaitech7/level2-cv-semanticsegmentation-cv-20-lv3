@@ -4,7 +4,7 @@ import albumentations as A
 import pandas as pd
 from custom_dataset import XRayInferenceDataset
 from torch.utils.data import DataLoader
-from function import test, tta_func
+from function import test, tta_func, save_results
 from custom_augments import TransformSelector, TestTimeTransform
 
 def main(config, IND2CLASS):
@@ -33,38 +33,15 @@ def main(config, IND2CLASS):
     )
 
     if config['TTA']['used']:
-            tta_transform = TestTimeTransform(config['TTA']['augmentations']).getTransform()
-            rles, filename_and_class = tta_func(model, tta_transform, IND2CLASS, test_loader, config['model']['type'], config['model']['arch'])
+        tta_transform = TestTimeTransform(config['TTA']['augmentations']).getTransform()
+        rles, filename_and_class = tta_func(model, tta_transform, IND2CLASS, test_loader, config['model']['type'], config['model']['arch'])
+        output = os.path.join(SAVED_DIR, "output")
+        save_results(filename_and_class, rles, output,  f"{config['exp_name']}_tta.csv")
 
-            classes, filename = zip(*[x.split("_") for x in filename_and_class])
-            image_name = [os.path.basename(f) for f in filename]
-            df = pd.DataFrame({
-                "image_name": image_name,
-                "class": classes,
-                "rle": rles,
-            })
-
-            output = os.path.join(SAVED_DIR, "output")
-            if not os.path.exists(output):
-                os.makedirs(output)
-            df.to_csv(os.path.join(output, f"{config['exp_name']}_tta.csv"), index=False)
-    
     else:
         rles, filename_and_class = test(model, IND2CLASS, test_loader, config['model']['type'], config['model']['arch'], thr=thr)
-
-        classes, filename = zip(*[x.split("_", 1) for x in filename_and_class])
-        image_name = [os.path.basename(f) for f in filename]
-        df = pd.DataFrame({
-            "image_name": image_name,
-            "class": classes,
-            "rle": rles,
-        })
-
-
         output = os.path.join(SAVED_DIR, "output")
-        if not os.path.exists(output):
-            os.makedirs(output)
-        df.to_csv(os.path.join(output, f"{config['exp_name']}.csv"), index=False)
+        save_results(filename_and_class, rles, output,  f"{config['exp_name']}.csv")
 
 if __name__ == '__main__':
     main()
