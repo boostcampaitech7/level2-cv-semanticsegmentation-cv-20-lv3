@@ -26,9 +26,7 @@ class smpModel:
             in_channels = self.in_channels,
             classes = self.num_classes,
         )
-        for module in self.model.modules():
-            if isinstance(module, nn.BatchNorm2d):
-                module.track_running_stats = False
+        
         return self.model 
 
 class huggingface:
