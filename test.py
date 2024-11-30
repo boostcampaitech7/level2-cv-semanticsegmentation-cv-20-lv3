@@ -2,10 +2,10 @@ import os
 import torch
 import albumentations as A
 import pandas as pd
-from custom_dataset import XRayInferenceDataset
+from tools.custom_dataset import XRayInferenceDataset
 from torch.utils.data import DataLoader
-from function import test, tta_func, save_results
-from custom_augments import TransformSelector, TestTimeTransform
+from tools.function import test, tta_func, save_results
+from tools.custom_augments import TransformSelector, TestTimeTransform
 
 def main(config, IND2CLASS):
     IMAGE_ROOT = config['paths']['test']['image']

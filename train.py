@@ -2,10 +2,10 @@ import os
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from custom_dataset import XRayDataset
-from function import set_seed, train
-from custom_augments import TransformSelector
-from selectModel import modelSelector
+from tools.custom_dataset import XRayDataset
+from tools.function import set_seed, train
+from tools.custom_augments import TransformSelector
+from tools.select_model import modelSelector
 import wandb
 
 def check_data(png_prefix, jsons_prefix):
