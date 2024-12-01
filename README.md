@@ -147,6 +147,7 @@ yaml 파일의 save_dir에 기재된 경로에 따라 저장된 모델(.pt)파�
 ```bash
 $ python run.py --mode test --config ./config/config.yaml
 ```
+<br/>
 
 #### 3.3.4. 하이퍼파라미터 최적화
 
