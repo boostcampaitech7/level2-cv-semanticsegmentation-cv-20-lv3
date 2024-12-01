@@ -148,6 +148,14 @@ yaml 파일의 save_dir에 기재된 경로에 따라 저장된 모델(.pt)파�
 $ python run.py --mode test --config ./config/config.yaml
 ```
 
+#### 3.3.4. 하이퍼파라미터 최적화
+
+yaml 파일에 명시된 모델에 알맞은 학습률, 옵티마이저, 스케줄러를 탐색합니다. 탐색한 파라미터는 yaml 파일의 save_dir에 기재된 경로에 json 파일로 저장됩니다. 훈련과 동일하게 run.py 파일의 mode만 opt로 지정해 실행합니다.
+
+```bash
+$ python run.py --mode opt --config ./config/config.yaml
+```
+
 앞서 언급한 방법은 Torchvision과 SMP 라이브러리에 있는 모델을 사용할 수 있는 방법입니다. 만약 MMSegmentation 라이브러리를 활용하기 위해서는 mmenv 폴더의 [README](https://github.com/boostcampaitech7/level2-cv-semanticsegmentation-cv-20-lv3/tree/main/mmenv)에서 확인할 수 있습니다.
 
 <br/>
