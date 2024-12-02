@@ -237,7 +237,7 @@ $ python run.py --mode opt --config ./config/config.yaml
 | Ensemble (w/o Best) |     2     |0.9689|
 | Ensemble (w/  Best) |     1     |0.9696|
 
-보다 자세한 실험 과정 및 결과를 확인을 원하시는 분들은 [Wrap-up reaport](링크수정)를 참고하여 주시기 바랍니다.
+보다 자세한 실험 과정 및 결과를 확인을 원하시는 분들은 [Wrap-up reaport](https://github.com/boostcampaitech7/level2-cv-semanticsegmentation-cv-20-lv3/blob/main/Wrap-up%20report.pdf)를 참고하여 주시기 바랍니다.
 
 <br/>
  
