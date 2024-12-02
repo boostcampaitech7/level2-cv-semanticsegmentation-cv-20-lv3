@@ -5,9 +5,9 @@ import torch.optim as optim
 from tqdm import tqdm
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from custom_dataset import XRayDataset
-from custom_augments import TransformSelector
-from selectModel import modelSelector
+from tools.custom_dataset import XRayDataset
+from tools.custom_augments import TransformSelector
+from tools.select_model import modelSelector
 import optuna
 from optuna.samplers import TPESampler
 import wandb

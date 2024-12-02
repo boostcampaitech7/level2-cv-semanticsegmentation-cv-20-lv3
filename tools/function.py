@@ -22,7 +22,7 @@ from omegaconf import OmegaConf
 import warnings
 warnings.filterwarnings('ignore')
 
-from custom_dataset import EnsembleDataset
+from tools.custom_dataset import EnsembleDataset
 
 def dice_coef(y_true, y_pred):
     y_true_f = y_true.flatten(2)
