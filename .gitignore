@@ -1,0 +1,20 @@
+# Data 포함되지 않게 처리
+train
+test
+data.tar.gz
+*.csv
+meta_data.xlsx
+
+# baseline 처리
+baseline_code.*
+
+# pycache 처리
+*.pyc
+__pycache__/
+
+# 훈련하면서 생성되는 폴더 처리
+*.pt
+wandb
+checkpoints
+*.out
+*.log
