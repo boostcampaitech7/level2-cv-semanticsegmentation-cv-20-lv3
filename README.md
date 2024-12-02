@@ -17,38 +17,38 @@
 ## 2.🧑‍🤝‍🧑 Team ( CV-20 : 수상한조)
 
 <table>
-    <tr height="160px">
-        <td align="center" width="110px">
+    <tr height="150px">
+        <td align="center" width="120px">
             <a href="https://github.com/IronNote"><img height="110px"  src="https://avatars.githubusercontent.com/IronNote"></a>
             <br/>
             <a href="https://github.com/IronNote"><strong>김명철</strong></a>
             <br />
         </td>
-        <td align="center" width="110px">
+        <td align="center" width="120px">
             <a href="https://github.com/kaeh3403"><img height="110px"  src="https://avatars.githubusercontent.com/kaeh3403"></a>
             <br/>
             <a href="https://github.com/kaeh3403"><strong>김성규</strong></a>
             <br />
         </td>
-        <td align="center" width="110px">
+        <td align="center" width="120px">
             <a href="https://github.com/kimmaru"><img height="110px"  src="https://avatars.githubusercontent.com/kimmaru"/></a>
             <br/>
             <a href="https://github.com/kimmaru"><strong>김성주</strong></a>
             <br />
         </td>
-        <td align="center" width="110px">
+        <td align="center" width="120px">
             <a href="https://github.com/SuyoungPark11"><img height="110px" src="https://avatars.githubusercontent.com/SuyoungPark11"/></a>
             <br />
             <a href="https://github.com/SuyoungPark11"><strong>박수영</strong></a>
             <br />
         </td>
-        <td align="center" width="110px">
+        <td align="center" width="120px">
             <a href="https://github.com/kocanory"><img height="110px" src="https://avatars.githubusercontent.com/kocanory"/></a>
             <br />
             <a href="https://github.com/kocanory"><strong>이승현</strong></a>
             <br />
         </td>
-        <td align="center" width="110px">
+        <td align="center" width="120px">
             <a href="https://github.com/nOctaveLay"><img height="110px" src="https://avatars.githubusercontent.com/nOctaveLay"/></a>
             <br />
             <a href="https://github.com/nOctaveLay"><strong>임정아</strong></a>
@@ -56,14 +56,14 @@
         </td>
 </table> 
 
-|Name        |Roles                                                         |
-|:----------:|:------------------------------------------------------------:|
-|김명철|  |
-|김성규| EDA, 모델 실험(FCN), Offline Augmentation |
-|김성주|  |
-|박수영| 일정 관리, streamlit 구현, 모델(UNet계열, MANet, SegFormer) 실험, Hard voting |
-|이승현| 베이스라인 수립, 모델 실험(DeepLab 계열, UperNet), Test Time Augmentation 수행, 하이퍼 파라미터 튜닝, |
-|임정아| |
+|Name      |Roles                                                                                                      |
+|:--------:|:---------------------------------------------------------------------------------------------------------:|
+|김명철    | 실험 및 최종 보고서 관리, Data augmentation 실험 수행                                                        |
+|김성규    | EDA, 모델 실험(FCN), Offline Augmentation 수행                                                              |
+|김성주    | 실험 및 협업 환경 구축, 학습 속도 향상, 전처리 증강, 옵티마이저 및 파라미터 탐색, 앙상블                         |
+|박수영    | 일정 관리, streamlit 구현, 모델(UNet계열, MANet, SegFormer) 실험, Hard voting                                |
+|이승현    | 베이스라인 수립, 모델 실험(DeepLab 계열, UperNet), Test Time Augmentation 실험, 하이퍼 파라미터 튜닝           |
+|임정아    | 메타 데이터 EDA, 모델 실험(FCN 크기 비교, PANnet), 이미지 사이즈에 따른 크기 비교, pseudo labeling, soft voting |
 
 <br/>
 
