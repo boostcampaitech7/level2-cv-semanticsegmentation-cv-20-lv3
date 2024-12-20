@@ -1,0 +1,100 @@
+# Project Settings
+proj_name : test
+exp_name : test_transforms
+
+# General Settings
+random_seed: 20
+debug: false
+
+# # Model Configuration
+model:
+  type: "torchvision"
+  name: "fcn_resnet50"
+  pretrained: true
+
+# model:
+#   type: smp
+#   arch: pan
+#   encoder_name: resnet50
+#   name: pan
+#   encoder_weights: imagenet
+#   in_channels: 3
+
+# Optimizer & Scheduler Configuration
+optimizer:
+  type: "Adam"
+  lr: 0.0001
+
+criterion: "BCEWithLogitsLoss"
+
+# lr_scheduler:
+#   type: 'ReduceLROnPlateau' 
+#   params:
+#     factor: 0.1
+#     patience: 5
+#     mode: 'min'
+
+# Pseudo-Labeling Configuration
+pseudo_labeling:
+  enabled: false               
+  confidence_threshold: 0.9   
+  max_pseudo_samples: 1000    
+  pseudo_dir: "./data/test/outputs_json"  
+
+# Dataset Paths
+paths:
+  data: "./data"
+  train:
+    image: "./data/train/DCM"
+    label: "./data/train/outputs_json"
+  test:
+    image: "./data/test/DCM"
+  model:
+    save_dir: "./result"
+    pt_loaded_dir: "./result/pan_basic/pan.pt"
+
+# Data Augmentation
+transform:
+  train:
+    type: albumentations
+    augmentations:
+      - type: Resize
+        params:
+          height: 512
+          width: 512
+      - type: Rotate
+        params:
+          p: 1.0
+          limit: [-30, 30]
+      
+  
+  val: 
+    type: albumentations
+    augmentations:
+      - type: Resize
+        params:
+          height: 512
+          width: 512
+
+# Training Configuration
+training:
+  batch_size:
+    train: 8
+    val: 4
+  num_epochs: 100
+  validate_every: 1
+
+TTA:
+  used: false
+  augmentations:
+    - type: HorizontalFlip
+      params:
+    - type: Multiply
+      params:
+        factors: [0.9, 1, 1.1, 1.2]
+
+early_stopping:
+  patience: 10 #  Validation 단계에서 성능 향상이 없더라도 대기할 최대 횟수
+  delta: 0.01 # 성능 지표(valid_dice)가 개선되었다고 간주할 최소 변화량
+
+cropped: true
