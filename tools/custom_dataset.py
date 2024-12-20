@@ -64,25 +64,6 @@ class XRayDataset(Dataset):
     
     def __getitem__(self, item):
 
-        '''
-        그럼 train에서
-        image_name = train/DCM/IDXXX/image166XXX~.png
-        label = train/outputs_json/IDXXX/image166XXX~.json
-
-        test에서
-        image_name = test/DCM/IDXXX/image166XXX~.png
-        label = test/outputs_json/image166XXX~.json
-
-        이 될 것이다.
-
-        앞의 self.img_root / self.label_root는 전부
-        self.data_root = level2-~/data/
-        로 잡아주면 될 것이다.
-
-        변경 부분 : XRayDataset(Dataset) 의 __init__(self)
-        relpath의 start 부분 (data부터 시작하게 만들어야 함)
-        '''
-
         image_name = self.filenames[item]
         image_path = os.path.join(self.data_root, image_name)
         
